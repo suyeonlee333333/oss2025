@@ -10,5 +10,7 @@
  + 헤더4
 
 동아대학교 홈페이지는 여기로
-- [http://sqlbak.com](https://www.donga.ac.kr)
-  [Link](https://www.donga.ac.kr)
+- [Link](https://www.donga.ac.kr)
+  
+1. Ordered list (1,2,3)
+2. Unordered list (*)
