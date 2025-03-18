@@ -11,7 +11,7 @@
 
 동아대학교 홈페이지는 여기로
 - [Link](https://www.donga.ac.kr)
-
+![alt text](https://wwwold.donga.ac.kr/Web2017/Sub/001004001_2021_symbol.jpg "title")
 > 1. "The computer was born to solve problems that did not exist before.” —Bill Gates, Microsoft founder and former CEO, philanthropist
 > 2. “Most of the good programmers do programming not because they expect to get paid or get adulation by the public, but because it is fun to program.” —Linus Torvalds, software engineer, inventor of the Linux operating system3.
 > 3. “Everybody should learn to program a computer, because it teaches you how to think.” -Steve Jobs, former CEO and creator of Apple
