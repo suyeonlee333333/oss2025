@@ -37,7 +37,7 @@ for _, row in df.iterrows():
 st_folium(m, width=700, height=500)
 
 # 약국 검색 기능
-search_term = st.text_input("검색할 약국명을 입력하세요:")
+search_term = st.text_input("🔍 검색할 약국명을 입력하세요:")
 
 # 약국 검색 결과 필터링
 if search_term:
