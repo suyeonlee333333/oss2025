@@ -11,7 +11,28 @@ df = df.dropna(subset=["위도", "경도"])
 # 앱 제목
 st.title("💊 부산 심야약국 위치 지도")
 
-# 🔍 약국 검색
+# 사이드 바에 즐겨찾기 기능 추가
+st.sidebar.title("즐겨찾기 기능")
+if "favorite_pharmacies" not in st.session_state:
+    st.session_state.favorite_pharmacies = []
+
+# 즐겨찾기 관리
+selected_pharmacy_name = st.sidebar.selectbox("즐겨찾기에 추가할 약국을 선택하세요:", df["약국명"])
+if st.sidebar.button(f"{selected_pharmacy_name} 즐겨찾기 추가"):
+    if selected_pharmacy_name not in st.session_state.favorite_pharmacies:
+        st.session_state.favorite_pharmacies.append(selected_pharmacy_name)
+        st.sidebar.success(f"{selected_pharmacy_name}이 즐겨찾기에 추가되었습니다.")
+    else:
+        st.sidebar.warning(f"{selected_pharmacy_name}은 이미 즐겨찾기에 추가되어 있습니다.")
+
+# 자주 찾는 약국 목록 표시
+if st.session_state.favorite_pharmacies:
+    st.sidebar.markdown("**🗂️ 자주 찾는 약국 목록**")
+    st.sidebar.write(st.session_state.favorite_pharmacies)
+else:
+    st.sidebar.warning("즐겨찾기에 추가된 약국이 없습니다.")
+
+# 🔍 약국명 검색
 st.subheader("🔍 약국명 검색")
 search_term = st.text_input("약국명을 입력하세요:")
 
@@ -45,14 +66,10 @@ if search_term:
 
 # 📍 구 선택
 st.subheader("📍 지역별 약국 보기")
-
 districts = sorted(df["관리지역"].unique())
 
 if "selected_district" not in st.session_state:
     st.session_state.selected_district = None
-
-if "favorite_pharmacies" not in st.session_state:
-    st.session_state.favorite_pharmacies = []
 
 cols = st.columns(4)
 for i, district in enumerate(districts):
@@ -81,31 +98,6 @@ if selected_district:
         if additional_info:
             st.write("입력된 추가 정보:")
             st.write(additional_info)
-
-        # 💖 즐겨찾기 버튼
-        st.subheader("💖 즐겨찾기")
-        selected_pharmacy_name = st.selectbox("즐겨찾기에 추가할 약국을 선택하세요:", filtered_df["약국명"])
-        if st.button(f"{selected_pharmacy_name} 즐겨찾기 추가"):
-            if selected_pharmacy_name not in st.session_state.favorite_pharmacies:
-                st.session_state.favorite_pharmacies.append(selected_pharmacy_name)
-                st.success(f"{selected_pharmacy_name}이 즐겨찾기에 추가되었습니다.")
-            else:
-                st.warning(f"{selected_pharmacy_name}은 이미 즐겨찾기에 추가되어 있습니다.")
-
-        # 📋 자주 찾는 약국 목록
-        if st.session_state.favorite_pharmacies:
-            st.markdown("**🗂️ 자주 찾는 약국 목록**")
-            st.write(st.session_state.favorite_pharmacies)
-        else:
-            st.warning("즐겨찾기에 추가된 약국이 없습니다.")
-
-        # 📝 방문 후 기록 추가
-        st.subheader("📝 방문 후 기록")
-        st.write("방문 후 의약품의 가격이나 종류를 추가할 수 있습니다.")
-        medicine_info = st.text_area("의약품 가격/종류 기록:", height=150)
-        if medicine_info:
-            st.write("입력된 기록은 다음과 같습니다:")
-            st.write(medicine_info)
 
         # 지도 생성
         center_lat = filtered_df["위도"].mean()
