@@ -4,7 +4,7 @@ import folium
 from streamlit_folium import st_folium
 
 # CSV 파일 불러오기 (인코딩 오류가 나면 encoding을 "cp949"로 바꿔보세요)
-df = pd.read_csv("night_pharmacy.csv", encoding="utf-8-sig")
+df = pd.read_csv("night_pharmacy1.csv", encoding="utf-8-sig")
 
 # 관리지역에서 '구' 이름만 추출해서 새로운 컬럼으로 저장
 df['구'] = df['관리지역'].str.extract(r'([가-힣]+구)')
