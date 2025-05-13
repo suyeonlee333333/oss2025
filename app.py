@@ -3,25 +3,21 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 
-# 📦 데이터 로드 및 전처리
-@st.cache_data
 def load_data():
-    df = pd.read_csv("pharmacy.csv", encoding="utf-8", dtype=str)
-
-    # 열 이름 공백 제거
-    df.columns = df.columns.str.strip()
-
-    # 도로명주소에서 시/도 추출
+    try:
+        # 'utf-8' 대신 다른 인코딩 사용
+        df = pd.read_csv("pharmacy.csv", encoding="latin1", dtype=str)
+    except UnicodeDecodeError:
+        # 추가적인 인코딩 시도
+        df = pd.read_csv("pharmacy.csv", encoding="ISO-8859-1", dtype=str)
+    
+    df.columns = df.columns.str.strip()  # 열 이름 공백 제거
     df['시도'] = df['도로명전체주소'].str.extract(r'^(\S+?[시도])')
-
-    # 좌표를 숫자로 변환
     df['좌표정보x'] = pd.to_numeric(df['좌표정보x'], errors='coerce')
     df['좌표정보y'] = pd.to_numeric(df['좌표정보y'], errors='coerce')
-
-    # 위치 정보 없는 행 제거
     df = df.dropna(subset=['좌표정보x', '좌표정보y'])
-
     return df
+
 
 df = load_data()
 
