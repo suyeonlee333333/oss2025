@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # -------------------- 데이터 로드 --------------------
-@st.cache_data
+@st.cache_data  # st.cache 대신 st.cache_data 사용
 def load_data():
     df = pd.read_csv("library_data.csv")
     df['평가년도'] = pd.to_datetime(df['평가년도'], format='%Y')
