@@ -13,35 +13,58 @@ df = df.dropna(subset=["위도", "경도"])
 districts = sorted(df["관리지역"].unique())
 selected_district = st.sidebar.selectbox("구를 선택하세요", districts)
 
+# 전체 부산시 심야약국 지도를 먼저 표시
+st.title("💊 부산 심야약국 위치 지도")
+
+# 전체 지도의 중심 위치 설정 (기본은 부산 중심 좌표)
+center_lat, center_lon = 35.1796, 129.0756  # 부산 중심
+
+# Folium 지도 생성 (전체 부산시)
+m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+
+# 전체 심야약국 마커 추가
+for _, row in df.iterrows():
+    name = row["약국명"]
+    address = row["소재지(도로명)"]
+    phone = row["전화번호"]
+    lat = row["위도"]
+    lon = row["경도"]
+
+    popup_text = f"{name}<br>{address}<br>{phone}"
+    folium.Marker([lat, lon], popup=popup_text).add_to(m)
+
+# Streamlit에 전체 부산시 지도 표시
+st_folium(m, width=700, height=500)
+
 # 선택한 구의 약국 필터링
 filtered_df = df[df["관리지역"] == selected_district]
 
-# 지도 중심 위치 설정 (기본은 부산 중심 좌표)
+# 선택한 구의 지도
 if not filtered_df.empty:
+    # 선택된 구의 중심 좌표로 지도 업데이트
     center_lat = filtered_df["위도"].mean()
     center_lon = filtered_df["경도"].mean()
 else:
-    center_lat, center_lon = 35.1796, 129.0756  # 부산 중심
+    center_lat, center_lon = 35.1796, 129.0756  # 기본 부산 중심
 
-# Folium 지도 생성
-m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
+# 선택된 구의 지도 생성
+m_filtered = folium.Map(location=[center_lat, center_lon], zoom_start=13)
 
-# 약국 마커 추가
+# 선택된 구의 약국 마커 추가
 for _, row in filtered_df.iterrows():
     name = row["약국명"]
     address = row["소재지(도로명)"]
     phone = row["전화번호"]
     lat = row["위도"]
     lon = row["경도"]
-    
+
     popup_text = f"{name}<br>{address}<br>{phone}"
-    folium.Marker([lat, lon], popup=popup_text).add_to(m)
+    folium.Marker([lat, lon], popup=popup_text).add_to(m_filtered)
 
-# Streamlit에 지도 표시
-st.title("💊 부산 심야약국 위치 지도")
+# Streamlit에 선택한 구의 지도 표시
 st.write(f"선택한 지역: **{selected_district}**")
-st_folium(m, width=700, height=500)
+st_folium(m_filtered, width=700, height=500)
 
-# 선택한 약국 표 표시
+# 선택한 구의 약국 목록 표시
 st.write("### 📋 약국 목록")
 st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
