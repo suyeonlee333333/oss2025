@@ -3,7 +3,6 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 from folium import Icon
-import datetime
 
 # CSV 파일 불러오기
 df = pd.read_csv("night_pharmacy1.csv", encoding="utf-8-sig")
@@ -35,7 +34,7 @@ if search_term:
                 {row['전화번호']}
             </div>
             """
-            folium.Marker([row["위도"], row["경도"]], 
+            folium.Marker([row["위도"], row["경도"]],
                           popup=folium.Popup(popup_html, max_width=250),
                           icon=Icon(color='green', icon='info-sign')).add_to(m_search)
 
@@ -73,22 +72,22 @@ if selected_district:
         opening_date = st.date_input("약국 개설일을 선택하세요:")
         st.write(f"선택한 개설일: {opening_date}")
 
-        # 📝 약국에 대한 추가 정보 입력 받기 (Streamlit text_area)
+        # 📝 약국 추가 정보 입력 받기 (Streamlit text_area)
         st.subheader("📝 약국 추가 정보")
         additional_info = st.text_area("약국에 대해 추가 정보를 입력하세요:", height=100)
         if additional_info:
             st.write("입력된 추가 정보:")
             st.write(additional_info)
 
-        # 💊 약국 평점 매기기
-        st.subheader("💊 약국 평점")
-        rating = st.slider("약국 평점을 선택하세요", 1, 5, 3)
-        st.write(f"선택한 평점: {rating} 점")
+        # 🚶‍♂️ 약국 방문일 입력 받기 (Streamlit date_input)
+        st.subheader("🚶‍♂️ 약국 방문일")
+        visit_date = st.date_input("약국을 방문한 날짜를 선택하세요:")
+        st.write(f"선택한 방문일: {visit_date}")
 
-        # 🗺️ 약국 위치 (위도/경도 입력 받기)
-        st.subheader("🗺️ 약국 위치 입력")
-        latitude = st.number_input("위도를 입력하세요", min_value=-90.0, max_value=90.0, value=35.1796)
-        longitude = st.number_input("경도를 입력하세요", min_value=-180.0, max_value=180.0, value=129.0756)
+        # 🌟 약국 평점 매기기 (Streamlit slider)
+        st.subheader("🌟 약국 평점")
+        rating = st.slider("약국의 평점을 매겨주세요 (1: 매우 나쁨, 5: 매우 좋음)", 1, 5)
+        st.write(f"선택한 평점: {rating}점")
 
         # 지도 생성
         center_lat = filtered_df["위도"].mean()
