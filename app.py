@@ -18,6 +18,9 @@ if search_term:
     filtered_search = df[df["약국명"].str.contains(search_term, case=False, na=False)]
     if not filtered_search.empty:
         st.success(f"{len(filtered_search)}개 약국이 검색되었습니다.")
+        st.markdown("**📋 검색된 약국 목록**")
+        st.dataframe(filtered_search[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
+
         center_lat = filtered_search["위도"].mean()
         center_lon = filtered_search["경도"].mean()
         m_search = folium.Map(location=[center_lat, center_lon], zoom_start=13)
@@ -27,8 +30,7 @@ if search_term:
             folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m_search)
 
         st_folium(m_search, width=700, height=500)
-        st.markdown("**📋 검색된 약국 목록**")
-        st.dataframe(filtered_search[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
+
     else:
         st.warning("검색 결과가 없습니다.")
 
@@ -37,11 +39,9 @@ st.subheader("📍 지역별 약국 보기")
 
 districts = sorted(df["관리지역"].unique())
 
-# 세션 상태 초기화
 if "selected_district" not in st.session_state:
     st.session_state.selected_district = None
 
-# 구 버튼 나열
 cols = st.columns(4)
 for i, district in enumerate(districts):
     if cols[i % 4].button(district):
@@ -49,31 +49,32 @@ for i, district in enumerate(districts):
 
 selected_district = st.session_state.selected_district
 
-# 선택된 구 처리
 if selected_district:
     st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
-
-    # 관리지역 필터 (부분 포함)
     filtered_df = df[df["관리지역"].str.contains(selected_district, na=False)]
 
     if not filtered_df.empty:
+        # 📋 약국 목록 먼저
+        st.markdown("**📋 약국 목록**")
+        st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
+
+        # 지도 생성
         center_lat = filtered_df["위도"].mean()
         center_lon = filtered_df["경도"].mean()
-
         m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
 
         for _, row in filtered_df.iterrows():
             popup_text = f"{row['약국명']}<br>{row['소재지(도로명)']}<br>{row['전화번호']}"
             folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m)
 
-        # 지도 출력
+        # 지도 표시
         st_folium(m, width=700, height=500)
 
-        # 💡 지도 아래 여백 줄이기 위한 CSS
+        # 💡 지도 위 여백 줄이기 CSS
         st.markdown(
             """
             <style>
-            .element-container:has(.folium-map) + .element-container {
+            .element-container:has(.folium-map) {
                 margin-top: -30px !important;
             }
             </style>
@@ -81,9 +82,6 @@ if selected_district:
             unsafe_allow_html=True
         )
 
-        # 📋 약국 목록
-        st.markdown("**📋 약국 목록**")
-        st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
     else:
         st.warning("해당 지역에 약국 데이터가 없습니다.")
 else:
