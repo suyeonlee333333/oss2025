@@ -1,86 +1,100 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import pydeck as pdk
+import numpy as np
 
+# -------------------- 데이터 로드 --------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("library_data.csv")
+    df = pd.read_csv("library_data.csv")  # 데이터 파일 경로 맞게 수정
+    df = df.dropna(subset=['위도', '경도'])
+    df['위도'] = df['위도'].astype(float)
+    df['경도'] = df['경도'].astype(float)
+    df['평가년도'] = pd.to_datetime(df['평가년도'], errors='coerce')
+    return df
 
 df = load_data()
 
-st.title("📚 대한민국 공공도서관 위치 지도")
+# -------------------- UI --------------------
+st.title("📚 전국 공공도서관 정보")
 
-# -------------------- 대한민국 전체 지도용 selectbox --------------------
-# '행정구역'을 기준으로 시/도 목록 생성
-sido_list = sorted(df["행정구역"].dropna().unique())
-selected_sido = st.sidebar.selectbox("🗺️ [대한민국 지도용] 시/도 선택", ["전체"] + sido_list)
+# 날짜 필터 (평가년도)
+date_range = st.date_input("평가년도 범위", [df['평가년도'].min().date(), df['평가년도'].max().date()])
 
-if selected_sido != "전체":
-    filtered_df_map = df[df["행정구역"] == selected_sido]
-else:
-    filtered_df_map = df
+# 지역 필터 (행정구역)
+광역시도_목록 = sorted(df['행정구역'].dropna().unique())
+selected_regions = st.multiselect("광역시/도 선택", 광역시도_목록)
 
-st.subheader(f"📍 '{selected_sido}' 지역 도서관 지도 (대한민국 전체 기준)")
+# 도서관 구분 필터
+library_type_목록 = sorted(df['도서관구분'].dropna().unique())
+selected_types = st.multiselect("도서관 구분 선택", library_type_목록)
 
-if not filtered_df_map.empty:
-    fig_map = px.scatter_mapbox(
-        filtered_df_map,
-        lat="위도",  # 위도는 CSV에 맞게 변경해 주세요
-        lon="경도",  # 경도는 CSV에 맞게 변경해 주세요
-        color_discrete_sequence=["blue"],
-        hover_name="도서관명",
-        hover_data={"위도": False, "경도": False, "행정구역": True, "도서관구분": True},
-        zoom=5 if selected_sido == "전체" else 8,
-        height=600
-    )
-
-    fig_map.update_layout(
-        mapbox_style="open-street-map",
-        mapbox_center={"lat": 36.5, "lon": 127.8},
-        margin={"r": 0, "t": 0, "l": 0, "b": 0}
-    )
-
-    st.plotly_chart(fig_map, use_container_width=True)
-else:
-    st.warning("선택한 지역에 해당하는 도서관 정보가 없습니다.")
-
-# -------------------- 구분선 --------------------
-st.divider()
-
-# -------------------- 복합 필터 지도 --------------------
-st.sidebar.markdown("---")
-st.sidebar.header("🔎 상세 조건 필터")
-# '행정구역' 필터
-sido_multi = st.sidebar.multiselect("시/도 필터", sorted(df["행정구역"].dropna().unique()), default=df["행정구역"].unique())
-gubun = st.sidebar.multiselect("도서관 유형", sorted(df["도서관구분"].dropna().unique()), default=df["도서관구분"].unique())
-year_range = st.sidebar.slider("평가년도 범위", int(df["평가년도"].min()), int(df["평가년도"].max()), (2000, 2024))
-
-filtered_df_full = df[
-    (df["행정구역"].isin(sido_multi)) &
-    (df["도서관구분"].isin(gubun)) &
-    (df["평가년도"] >= year_range[0]) &
-    (df["평가년도"] <= year_range[1])
+# -------------------- 필터링 --------------------
+filtered = df[
+    (df['평가년도'].dt.date >= date_range[0]) & (df['평가년도'].dt.date <= date_range[1])
 ]
 
-st.subheader(f"📊 상세 조건에 따른 도서관 지도 (총 {len(filtered_df_full)}개)")
+if selected_regions:
+    filtered = filtered[filtered['행정구역'].isin(selected_regions)]
 
-if not filtered_df_full.empty:
-    fig_full = px.scatter_mapbox(
-        filtered_df_full,
-        lat="위도",  # 위도는 CSV에 맞게 변경해 주세요
-        lon="경도",  # 경도는 CSV에 맞게 변경해 주세요
-        color="행정구역",
-        hover_name="도서관명",
-        hover_data=["도서관구분", "행정구역"],
-        zoom=5,
-        height=600
-    )
+if selected_types:
+    filtered = filtered[filtered['도서관구분'].isin(selected_types)]
 
-    fig_full.update_layout(
-        mapbox_style="open-street-map",
-        margin={"r": 0, "t": 0, "l": 0, "b": 0}
-    )
+# -------------------- 요약 통계 --------------------
+st.subheader("도서관 정보 요약")
+col1, col2, col3, col4 = st.columns(4)
+if not filtered.empty:
+    col1.metric("도서관 수", len(filtered))
+    col2.metric("평균 장서 수", f"{filtered['장서수(인쇄)'].mean():,.0f}")
+    col3.metric("평균 대출자수", f"{filtered['대출자수'].mean():,.0f}")
+    col4.metric("평균 도서예산", f"{filtered['도서예산(자료구입비)'].mean():,.0f}")
 
-    st.plotly_chart(fig_full, use_container_width=True)
+    top_region = filtered['행정구역'].value_counts().idxmax()
+    st.markdown(f"**가장 많은 도서관이 있는 지역:** {top_region}")
 else:
-    st.info("선택한 조건에 해당하는 도서관이 없습니다.")
+    st.warning("선택한 조건에 해당하는 도서관 데이터가 없습니다.")
+
+# -------------------- 도서관 평가년도 변화 라인 차트 --------------------
+st.subheader("도서관 개관년도 변화 추이")
+if not filtered.empty:
+    line_data = filtered.sort_values("평가년도")[['평가년도', '장서수(인쇄)']]
+    st.line_chart(line_data.rename(columns={'평가년도': 'index'}).set_index('index'))
+
+# -------------------- 지도 시각화 --------------------
+st.subheader("도서관 위치")
+if not filtered.empty:
+    map_data = filtered.rename(columns={'위도': 'latitude', '경도': 'longitude'})
+    map_data['평가년도'] = map_data['평가년도'].dt.strftime('%Y-%m-%d')
+
+    def library_size_to_color(size):
+        if size <= 10000:
+            return [0, 255, 0, 140]  # 작은 도서관: 초록색
+        elif size <= 50000:
+            return [255, 165, 0, 140]  # 중간 도서관: 주황색
+        else:
+            return [255, 0, 0, 160]  # 큰 도서관: 빨간색
+
+    map_data['color'] = map_data['장서수(인쇄)'].apply(library_size_to_color)
+
+    layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=map_data,
+        get_position='[longitude, latitude]',
+        get_radius='장서수(인쇄) * 0.1',  # 장서 수에 따라 크기 조정
+        get_fill_color='color',
+        pickable=True
+    )
+
+    view_state = pdk.ViewState(
+        latitude=map_data['latitude'].mean(),
+        longitude=map_data['longitude'].mean(),
+        zoom=6
+    )
+
+    st.pydeck_chart(pdk.Deck(
+        map_style="mapbox://styles/mapbox/light-v9",
+        initial_view_state=view_state,
+        layers=[layer],
+        tooltip={"text": "{도서관명}\n장서수: {장서수(인쇄)}\n평가년도: {평가년도}\n{행정구역}"}
+    ))
+
