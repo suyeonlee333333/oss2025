@@ -63,6 +63,8 @@ if selected_district:
         center_lon = filtered_df["경도"].mean()
         m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
 
+        from folium import Icon, CustomIcon
+        
         for _, row in filtered_df.iterrows():
             popup_html = f"""
             <div style="width: 200px;">
@@ -71,8 +73,21 @@ if selected_district:
                 {row['전화번호']}
             </div>
             """
-            folium.Marker([row["위도"], row["경도"]],
-                          popup=folium.Popup(popup_html, max_width=250)).add_to(m)
+            # 방법 1: 기본 아이콘을 다른 색상이나 모양으로 변경
+            folium.Marker(
+                [row["위도"], row["경도"]],
+                popup=folium.Popup(popup_html, max_width=250),
+                icon=Icon(color='green', icon='info-sign')  # 아이콘 색상 & 모양 변경
+            ).add_to(m)
+        
+            # 방법 2: 커스텀 이미지 아이콘 사용 (예시)
+            # icon_url = "https://example.com/pharmacy_icon.png"
+            # folium.Marker(
+            #     [row["위도"], row["경도"]],
+            #     popup=folium.Popup(popup_html, max_width=250),
+            #     icon=CustomIcon(icon_url, icon_size=(30, 30))
+            # ).add_to(m)
+            
 
 
         # 지도 표시
