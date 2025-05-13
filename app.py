@@ -28,6 +28,38 @@ filtered_df['이용률 점수'] = (
     filtered_df['대출자수'] / (filtered_df['사서수'] + 1)
 )
 
+
+# -------------------- 선택 지역 비교 분석 --------------------
+st.subheader("📊 선택된 행정구역 비교 분석")
+
+if len(selected_regions) == 1:
+    st.info("하나의 행정구역만 선택하셨습니다. 해당 지역의 연도별 변화 추이만 표시됩니다.")
+    single_df = df[df['행정구역'] == selected_regions[0]]
+    yearly_budget = single_df.groupby('평가년도')['도서예산(자료구입비)'].sum()
+    st.markdown("💡 **연도별 도서예산 변화**")
+    st.line_chart(yearly_budget)
+else:
+    st.markdown("💡 **선택한 행정구역들의 평균 도서 예산을 비교합니다.**")
+    compare_df = df[df['행정구역'].isin(selected_regions)]
+    grouped = compare_df.groupby(['평가년도', '행정구역'])['도서예산(자료구입비)'].mean().reset_index()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.lineplot(data=grouped, x='평가년도', y='도서예산(자료구입비)', hue='행정구역', marker='o', palette='Set2')
+    ax.set_title("연도별 지역별 평균 도서 예산 비교")
+    st.pyplot(fig)
+
+    # 이용률 지표 설명 및 시각화
+    st.markdown("💡 **도서관 이용률 비교 (대출자수 / 도서관 수)**")
+    usage_score = compare_df.groupby('행정구역').apply(
+        lambda x: x['대출자수'].sum() / x['도서관명'].nunique()
+    ).reset_index(name='이용률')
+
+    fig2, ax2 = plt.subplots()
+    sns.barplot(data=usage_score, x='행정구역', y='이용률', palette='pastel')
+    ax2.set_title("행정구역별 도서관 평균 이용률")
+    st.pyplot(fig2)
+
+
 # -------------------- 전체 비교 분석 --------------------
 st.subheader("📊 선택된 행정구역 비교 분석")
 
