@@ -1,69 +1,37 @@
 import streamlit as st
 import pandas as pd
 import folium
-from streamlit_folium import st_folium
+from folium import plugins
+import geopandas as gpd
+from geopy.geocoders import Nominatim
 
-# 📦 데이터 로드 및 전처리
-@st.cache_data
-def load_data():
-    # UTF-8 인코딩으로 데이터 읽기
-    df = pd.read_csv("pharmacy.csv", encoding="utf-8", dtype=str)
+# CSV 파일 불러오기
+df = pd.read_csv("night_pharmacy.csv")
 
-    # 열 이름 공백 제거
-    df.columns = df.columns.str.strip()
+# Streamlit 앱 설정
+st.title("부산시 심야 약국 지도")
+st.markdown("### 구 선택")
 
-    # 도로명주소에서 시/도 추출
-    df['시도'] = df['도로명전체주소'].str.extract(r'^(\S+?[시도])')
+# 구 리스트 가져오기
+districts = df['소재지(도로명)'].apply(lambda x: x.split()[0]).unique()
+selected_district = st.selectbox("구를 선택하세요", districts)
 
-    # 좌표를 숫자로 변환
-    df['좌표정보x'] = pd.to_numeric(df['좌표정보x'], errors='coerce')
-    df['좌표정보y'] = pd.to_numeric(df['좌표정보y'], errors='coerce')
+# 구에 해당하는 데이터 필터링
+district_data = df[df['소재지(도로명)'].str.contains(selected_district)]
 
-    # 위치 정보 없는 행 제거
-    df = df.dropna(subset=['좌표정보x', '좌표정보y'])
+# 지도 생성
+m = folium.Map(location=[district_data['위도'].mean(), district_data['경도'].mean()], zoom_start=12)
 
-    return df
+# 약국 마커 추가
+for idx, row in district_data.iterrows():
+    folium.Marker([row['위도'], row['경도']], 
+                  popup=f"약국명: {row['약국명']}<br>전화번호: {row['전화번호']}<br>관리지역: {row['관리지역']}",
+                  icon=folium.Icon(color="blue")).add_to(m)
 
-df = load_data()
+# 지도를 HTML로 렌더링
+st.markdown("### 심야 약국 위치")
+st.components.v1.html(m._repr_html_(), height=500)
 
-# 🎯 타이틀
-st.title("💊 전국 약국 정보 지도")
-st.markdown("지역과 영업상태를 선택해 약국을 지도에서 확인하세요.")
-
-# 🗺️ 지역(시도) 필터
-regions = df['시도'].dropna().unique()
-selected_regions = st.multiselect("📍 지역 선택 (시/도)", sorted(regions), default=regions[:1])
-
-# 🔄 영업 상태 필터
-status_options = df['영업상태명'].dropna().unique()
-selected_status = st.multiselect("🏪 영업 상태 선택", status_options, default=["영업중"])
-
-# 🔎 필터링
-filtered_df = df[df['시도'].isin(selected_regions) & df['영업상태명'].isin(selected_status)]
-
-# 📊 필터 결과 요약
-st.write(f"🔎 선택된 약국 수: {len(filtered_df)}")
-
-# ❌ 필터 결과가 없을 때
-if filtered_df.empty:
-    st.warning("해당 조건에 맞는 약국이 없습니다.")
-else:
-    # 📍 지도 중심 좌표
-    map_center = [filtered_df['좌표정보y'].mean(), filtered_df['좌표정보x'].mean()]
-    m = folium.Map(location=map_center, zoom_start=12)
-
-    # 📌 약국 마커 추가
-    for _, row in filtered_df.iterrows():
-        popup_text = f"""
-        <b>{row['사업장명']}</b><br>
-        전화: {row['소재지전화'] or '정보 없음'}<br>
-        주소: {row['도로명전체주소']}
-        """
-        folium.Marker(
-            [row['좌표정보y'], row['좌표정보x']],
-            popup=popup_text,
-            icon=folium.Icon(color="blue", icon="plus-sign")
-        ).add_to(m)
-
-    # 지도 출력
-    st_folium(m, width=800, height=600)
+# 필터링된 데이터 테이블 보여주기
+st.markdown("### 선택한 구의 약국 리스트")
+st.write(district_data[['약국명', '소재지(도로명)', '전화번호', '관리지역']])
