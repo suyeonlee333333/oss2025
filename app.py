@@ -68,20 +68,20 @@ if selected_district:
 
         # 지도 출력
         st_folium(m, width=700, height=500)
+
         # 💡 지도 아래 여백 줄이기 위한 CSS
-st.markdown(
-    """
-    <style>
-    .element-container:has(.folium-map) + .element-container {
-        margin-top: -30px !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+        st.markdown(
+            """
+            <style>
+            .element-container:has(.folium-map) + .element-container {
+                margin-top: -30px !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
-
-        # 지도와 목록 사이 간격 최소화
+        # 📋 약국 목록
         st.markdown("**📋 약국 목록**")
         st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
     else:
