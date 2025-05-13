@@ -3,17 +3,15 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 
-# CSV 불러오기
+# CSV 파일 불러오기
 df = pd.read_csv("night_pharmacy1.csv", encoding="utf-8-sig")
 df = df.dropna(subset=["위도", "경도"])
 
 # 앱 제목
 st.title("💊 부산 심야약국 위치 지도")
 
-# -------------------------------
-# 🔍 약국 검색 기능 (지도보다 위)
-# -------------------------------
-st.subheader("🔍 약국명으로 검색")
+# 🔍 약국 검색
+st.subheader("🔍 약국명 검색")
 search_term = st.text_input("약국명을 입력하세요:")
 
 if search_term:
@@ -29,21 +27,21 @@ if search_term:
             folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m_search)
 
         st_folium(m_search, width=700, height=500)
-        st.write("### 📋 검색된 약국 목록")
+        st.markdown("**📋 검색된 약국 목록**")
         st.dataframe(filtered_search[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
     else:
         st.warning("검색 결과가 없습니다.")
 
-# -------------------------------
-# 📍 구 선택 버튼 + 세션 저장
-# -------------------------------
+# 📍 구 선택
 st.subheader("📍 지역별 약국 보기")
 
 districts = sorted(df["관리지역"].unique())
 
+# 세션 상태 초기화
 if "selected_district" not in st.session_state:
     st.session_state.selected_district = None
 
+# 구 버튼 나열
 cols = st.columns(4)
 for i, district in enumerate(districts):
     if cols[i % 4].button(district):
@@ -51,13 +49,11 @@ for i, district in enumerate(districts):
 
 selected_district = st.session_state.selected_district
 
-# -------------------------------
-# ✅ 수정한 부분: 지도 + 약국 목록
-# -------------------------------
+# 선택된 구 처리
 if selected_district:
     st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
 
-    # ✅ 여기를 수정: '관리지역'이 포함된 데이터 필터
+    # 관리지역 필터 (부분 포함)
     filtered_df = df[df["관리지역"].str.contains(selected_district, na=False)]
 
     if not filtered_df.empty:
@@ -70,10 +66,11 @@ if selected_district:
             popup_text = f"{row['약국명']}<br>{row['소재지(도로명)']}<br>{row['전화번호']}"
             folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m)
 
-        st_folium(m, width=700, height=500)  # 📌 지도 표시
+        # 지도 출력
+        st_folium(m, width=700, height=500)
 
-        # 📌 불필요한 줄 제거: 간격 줄이기
-        st.write("### 📋 약국 목록")
+        # 지도와 목록 사이 간격 최소화
+        st.markdown("**📋 약국 목록**")
         st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
     else:
         st.warning("해당 지역에 약국 데이터가 없습니다.")
