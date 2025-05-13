@@ -11,11 +11,12 @@ df = load_data()
 st.title("📚 대한민국 공공도서관 위치 지도")
 
 # -------------------- 대한민국 전체 지도용 selectbox --------------------
-sido_list = sorted(df["시도명"].dropna().unique())
+# '행정구역'을 기준으로 시/도 목록 생성
+sido_list = sorted(df["행정구역"].dropna().unique())
 selected_sido = st.sidebar.selectbox("🗺️ [대한민국 지도용] 시/도 선택", ["전체"] + sido_list)
 
 if selected_sido != "전체":
-    filtered_df_map = df[df["시도명"] == selected_sido]
+    filtered_df_map = df[df["행정구역"] == selected_sido]
 else:
     filtered_df_map = df
 
@@ -24,11 +25,11 @@ st.subheader(f"📍 '{selected_sido}' 지역 도서관 지도 (대한민국 전�
 if not filtered_df_map.empty:
     fig_map = px.scatter_mapbox(
         filtered_df_map,
-        lat="위도",
-        lon="경도",
+        lat="위도",  # 위도는 CSV에 맞게 변경해 주세요
+        lon="경도",  # 경도는 CSV에 맞게 변경해 주세요
         color_discrete_sequence=["blue"],
         hover_name="도서관명",
-        hover_data={"위도": False, "경도": False, "주소": True, "도서관유형": True},
+        hover_data={"위도": False, "경도": False, "행정구역": True, "도서관구분": True},
         zoom=5 if selected_sido == "전체" else 8,
         height=600
     )
@@ -49,15 +50,16 @@ st.divider()
 # -------------------- 복합 필터 지도 --------------------
 st.sidebar.markdown("---")
 st.sidebar.header("🔎 상세 조건 필터")
-sido_multi = st.sidebar.multiselect("시/도 필터", sorted(df["시도명"].dropna().unique()), default=df["시도명"].unique())
-gubun = st.sidebar.multiselect("도서관 유형", sorted(df["도서관유형"].dropna().unique()), default=df["도서관유형"].unique())
-year_range = st.sidebar.slider("개관년도 범위", int(df["개관년도"].min()), int(df["개관년도"].max()), (2000, 2024))
+# '행정구역' 필터
+sido_multi = st.sidebar.multiselect("시/도 필터", sorted(df["행정구역"].dropna().unique()), default=df["행정구역"].unique())
+gubun = st.sidebar.multiselect("도서관 유형", sorted(df["도서관구분"].dropna().unique()), default=df["도서관구분"].unique())
+year_range = st.sidebar.slider("평가년도 범위", int(df["평가년도"].min()), int(df["평가년도"].max()), (2000, 2024))
 
 filtered_df_full = df[
-    (df["시도명"].isin(sido_multi)) &
-    (df["도서관유형"].isin(gubun)) &
-    (df["개관년도"] >= year_range[0]) &
-    (df["개관년도"] <= year_range[1])
+    (df["행정구역"].isin(sido_multi)) &
+    (df["도서관구분"].isin(gubun)) &
+    (df["평가년도"] >= year_range[0]) &
+    (df["평가년도"] <= year_range[1])
 ]
 
 st.subheader(f"📊 상세 조건에 따른 도서관 지도 (총 {len(filtered_df_full)}개)")
@@ -65,11 +67,11 @@ st.subheader(f"📊 상세 조건에 따른 도서관 지도 (총 {len(filtered_
 if not filtered_df_full.empty:
     fig_full = px.scatter_mapbox(
         filtered_df_full,
-        lat="위도",
-        lon="경도",
-        color="시도명",
+        lat="위도",  # 위도는 CSV에 맞게 변경해 주세요
+        lon="경도",  # 경도는 CSV에 맞게 변경해 주세요
+        color="행정구역",
         hover_name="도서관명",
-        hover_data=["도서관유형", "주소"],
+        hover_data=["도서관구분", "행정구역"],
         zoom=5,
         height=600
     )
