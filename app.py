@@ -10,7 +10,7 @@ df = df.dropna(subset=["위도", "경도"])
 # 앱 제목
 st.title("💊 부산 심야약국 위치 지도")
 
-# 🔍 약국 검색
+# 약국 검색
 st.subheader("🔍 약국명 검색")
 search_term = st.text_input("약국명을 입력하세요:")
 
@@ -34,7 +34,7 @@ if search_term:
     else:
         st.warning("검색 결과가 없습니다.")
 
-# 📍 구 선택
+# 구 선택
 st.subheader("📍 지역별 약국 보기")
 
 districts = sorted(df["관리지역"].unique())
@@ -54,7 +54,7 @@ if selected_district:
     filtered_df = df[df["관리지역"].str.contains(selected_district, na=False)]
 
     if not filtered_df.empty:
-        # 📋 약국 목록 먼저
+        # 약국 목록
         st.markdown("**📋 약국 목록**")
         st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
 
@@ -73,27 +73,19 @@ if selected_district:
                 {row['전화번호']}
             </div>
             """
-            # 방법 1: 기본 아이콘을 다른 색상이나 모양으로 변경
+            # 기본 아이콘을 다른 색상이나 모양으로 변경
             folium.Marker(
                 [row["위도"], row["경도"]],
                 popup=folium.Popup(popup_html, max_width=250),
                 icon=Icon(color='green', icon='info-sign')  # 아이콘 색상 & 모양 변경
             ).add_to(m)
-        
-            # 방법 2: 커스텀 이미지 아이콘 사용 (예시)
-            # icon_url = "https://example.com/pharmacy_icon.png"
-            # folium.Marker(
-            #     [row["위도"], row["경도"]],
-            #     popup=folium.Popup(popup_html, max_width=250),
-            #     icon=CustomIcon(icon_url, icon_size=(30, 30))
-            # ).add_to(m)
             
 
 
         # 지도 표시
         st_folium(m, width=700, height=500)
 
-        # 💡 지도 위 여백 줄이기 CSS
+        # 지도 위 여백 줄이기 CSS
         st.markdown(
             """
             <style>
