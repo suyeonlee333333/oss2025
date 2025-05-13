@@ -30,7 +30,7 @@ if st.session_state.favorite_pharmacies:
 else:
     st.sidebar.warning("즐겨찾기에 추가된 약국이 없습니다.")
 
-# ① 🔍 약국명 검색
+# 약국명 검색
 st.subheader("🔍 약국명 검색")
 search_term = st.text_input("약국명을 입력하세요:")
 
@@ -61,7 +61,7 @@ if search_term:
     else:
         st.warning("검색 결과가 없습니다.")
 
-# ② 📍 구 선택
+# 구 선택
 st.subheader("📍 지역별 약국 보기")
 districts = sorted(df["관리지역"].unique())
 
@@ -75,7 +75,7 @@ for i, district in enumerate(districts):
 
 selected_district = st.session_state.selected_district
 
-# ③-④ 선택한 지역 약국 목록 + 지도
+# 선택한 지역 약국 목록 + 지도
 if selected_district:
     st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
     filtered_df = df[df["관리지역"].str.strip() == selected_district]  # 정확히 일치하도록 수정!
@@ -119,7 +119,7 @@ if selected_district:
 else:
     st.info("💡 지역 버튼을 눌러 심야약국 위치를 확인하세요.")
 
-# ⑤ 📅 약국 방문일 & 📝 약국 추가 정보 입력
+# 약국 방문일 & 약국 추가 정보 입력
 st.subheader("📅 약국 방문일")
 opening_date = st.date_input("약국 방문일을 선택하세요:")
 st.write(f"선택한 방문일: {opening_date}")
