@@ -16,7 +16,6 @@ st.sidebar.title("즐겨찾기 기능")
 if "favorite_pharmacies" not in st.session_state:
     st.session_state.favorite_pharmacies = []
 
-# 즐겨찾기 관리
 selected_pharmacy_name = st.sidebar.selectbox("즐겨찾기에 추가할 약국을 선택하세요:", df["약국명"])
 if st.sidebar.button(f"{selected_pharmacy_name} 즐겨찾기 추가"):
     if selected_pharmacy_name not in st.session_state.favorite_pharmacies:
@@ -25,14 +24,13 @@ if st.sidebar.button(f"{selected_pharmacy_name} 즐겨찾기 추가"):
     else:
         st.sidebar.warning(f"{selected_pharmacy_name}은 이미 즐겨찾기에 추가되어 있습니다.")
 
-# 자주 찾는 약국 목록 표시
 if st.session_state.favorite_pharmacies:
     st.sidebar.markdown("**🗂️ 자주 찾는 약국 목록**")
     st.sidebar.write(st.session_state.favorite_pharmacies)
 else:
     st.sidebar.warning("즐겨찾기에 추가된 약국이 없습니다.")
 
-# 🔍 약국명 검색
+# ① 🔍 약국명 검색
 st.subheader("🔍 약국명 검색")
 search_term = st.text_input("약국명을 입력하세요:")
 
@@ -60,11 +58,10 @@ if search_term:
                           icon=Icon(color='green', icon='info-sign')).add_to(m_search)
 
         st_folium(m_search, width=700, height=500)
-
     else:
         st.warning("검색 결과가 없습니다.")
 
-# 📍 구 선택
+# ② 📍 구 선택
 st.subheader("📍 지역별 약국 보기")
 districts = sorted(df["관리지역"].unique())
 
@@ -78,16 +75,15 @@ for i, district in enumerate(districts):
 
 selected_district = st.session_state.selected_district
 
+# ③-④ 선택한 지역 약국 목록 + 지도
 if selected_district:
     st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
     filtered_df = df[df["관리지역"].str.contains(selected_district, na=False)]
 
     if not filtered_df.empty:
-        # 📋 약국 목록 먼저
         st.markdown("**📋 약국 목록**")
         st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
 
-                # 지도 생성
         center_lat = filtered_df["위도"].mean()
         center_lon = filtered_df["경도"].mean()
         m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
@@ -103,13 +99,11 @@ if selected_district:
             folium.Marker(
                 [row["위도"], row["경도"]],
                 popup=folium.Popup(popup_html, max_width=250),
-                icon=Icon(color='green', icon='info-sign')  # 아이콘 색상 & 모양 변경
+                icon=Icon(color='green', icon='info-sign')
             ).add_to(m)
 
-        # 지도 표시
         st_folium(m, width=700, height=500)
 
-        # 💡 지도 위 여백 줄이기 CSS
         st.markdown(
             """
             <style>
@@ -120,22 +114,18 @@ if selected_district:
             """,
             unsafe_allow_html=True
         )
-
     else:
         st.warning("해당 지역에 약국 데이터가 없습니다.")
 else:
     st.info("💡 지역 버튼을 눌러 심야약국 위치를 확인하세요.")
 
-        # 약국 방문일 입력 받기 (Streamlit date_input)
-        st.subheader("📅 약국 방문일")
-        opening_date = st.date_input("약국 방문일을 선택하세요:")
-        st.write(f"선택한 방문일: {opening_date}")
+# ⑤ 📅 약국 방문일 & 📝 약국 추가 정보 입력
+st.subheader("📅 약국 방문일")
+opening_date = st.date_input("약국 방문일을 선택하세요:")
+st.write(f"선택한 방문일: {opening_date}")
 
-        # 약국 추가 정보 입력 받기 (Streamlit text_area)
-        st.subheader("📝 약국 추가 정보")
-        additional_info = st.text_area("약국에 대해 추가 정보(의약품 종류/가격)를 입력하세요:", height=100)
-        if additional_info:
-            st.write("입력된 추가 정보:")
-            st.write(additional_info)
-
-
+st.subheader("📝 약국 추가 정보")
+additional_info = st.text_area("약국에 대해 추가 정보(의약품 종류/가격)를 기록하세요:", height=100)
+if additional_info:
+    st.write("입력된 추가 정보:")
+    st.write(additional_info)
