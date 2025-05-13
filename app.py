@@ -64,8 +64,16 @@ if selected_district:
         m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
 
         for _, row in filtered_df.iterrows():
-            popup_text = f"{row['약국명']}<br>{row['소재지(도로명)']}<br>{row['전화번호']}"
-            folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m)
+            popup_html = f"""
+            <div style="width: 200px;">
+                <strong>{row['약국명']}</strong><br>
+                {row['소재지(도로명)']}<br>
+                {row['전화번호']}
+            </div>
+            """
+            folium.Marker([row["위도"], row["경도"]],
+                          popup=folium.Popup(popup_html, max_width=250)).add_to(m)
+
 
         # 지도 표시
         st_folium(m, width=700, height=500)
