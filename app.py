@@ -78,7 +78,7 @@ selected_district = st.session_state.selected_district
 # ③-④ 선택한 지역 약국 목록 + 지도
 if selected_district:
     st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
-    filtered_df = df[df["관리지역"].str.contains(selected_district, na=False)]
+    filtered_df = df[df["관리지역"].str.strip() == selected_district]  # 정확히 일치하도록 수정!
 
     if not filtered_df.empty:
         st.markdown("**📋 약국 목록**")
