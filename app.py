@@ -1,37 +1,47 @@
-import folium
-import pandas as pd
-from folium.plugins import MarkerCluster
 import streamlit as st
+import pandas as pd
+import folium
+from streamlit_folium import st_folium
 
-# CSV 파일 읽기
+# CSV 파일 불러오기
 df = pd.read_csv("night_pharmacy1.csv", encoding="utf-8-sig")
 
-# 지도 초기화 (부산의 위도, 경도)
-location = [35.1796, 129.0756]
-m = folium.Map(location=location, zoom_start=12)
+# 위도/경도 값이 없는 행 제거
+df = df.dropna(subset=["위도", "경도"])
 
-# 마커 클러스터 추가 (많은 마커를 한 번에 처리할 수 있도록)
-marker_cluster = MarkerCluster().add_to(m)
+# 사이드바 - 구 선택
+districts = sorted(df["관리지역"].unique())
+selected_district = st.sidebar.selectbox("구를 선택하세요", districts)
 
-# 필터링된 데이터 사용
-for index, row in df.iterrows():
-    # 팝업에 사용될 텍스트
-    popup_text = f"""
-    <b>{row['약국명']}</b><br>
-    {row['소재지(도로명)']}<br>
-    <b>전화:</b> {row['전화번호']}
-    """
+# 선택한 구의 약국 필터링
+filtered_df = df[df["관리지역"] == selected_district]
 
-    # 마커에 팝업 추가
-    folium.Marker(
-        [row['위도'], row['경도']],
-        popup=folium.Popup(popup_text, max_width=300, min_width=200),  # 팝업 스타일
-        icon=folium.Icon(color='blue', icon='info-sign')  # 아이콘 추가
-    ).add_to(marker_cluster)
+# 지도 중심 위치 설정 (기본은 부산 중심 좌표)
+if not filtered_df.empty:
+    center_lat = filtered_df["위도"].mean()
+    center_lon = filtered_df["경도"].mean()
+else:
+    center_lat, center_lon = 35.1796, 129.0756  # 부산 중심
 
-# 지도 HTML 파일로 저장
-map_path = "map.html"
-m.save(map_path)
+# Folium 지도 생성
+m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
 
-# Streamlit에서 지도 표시
-st.markdown(f'<iframe src="{map_path}" width="100%" height="600px" style="border:none;"></iframe>', unsafe_allow_html=True)
+# 약국 마커 추가
+for _, row in filtered_df.iterrows():
+    name = row["약국명"]
+    address = row["소재지(도로명)"]
+    phone = row["전화번호"]
+    lat = row["위도"]
+    lon = row["경도"]
+    
+    popup_text = f"{name}<br>{address}<br>{phone}"
+    folium.Marker([lat, lon], popup=popup_text).add_to(m)
+
+# Streamlit에 지도 표시
+st.title("💊 부산 심야약국 위치 지도")
+st.write(f"선택한 지역: **{selected_district}**")
+st_folium(m, width=700, height=500)
+
+# 선택한 약국 표 표시
+st.write("### 📋 약국 목록")
+st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
