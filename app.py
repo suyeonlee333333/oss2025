@@ -31,18 +31,21 @@ filtered_df = filtered_df[filtered_df['영업상태명'].isin(selected_status)]
 
 st.write(f"선택된 약국 수: {len(filtered_df)}")
 
-# 지도 생성
-map_center = [filtered_df['좌표정보y'].mean(), filtered_df['좌표정보x'].mean()]
-m = folium.Map(location=map_center, zoom_start=12)
+# 지도를 만들기 전에 데이터가 있는지 확인
+if not filtered_df.empty:
+    map_center = [filtered_df['좌표정보y'].mean(), filtered_df['좌표정보x'].mean()]
+    m = folium.Map(location=map_center, zoom_start=12)
 
-for _, row in filtered_df.iterrows():
-    folium.Marker(
-        [row['좌표정보y'], row['좌표정보x']],
-        popup=f"""
-        <b>{row['사업장명']}</b><br>
-        전화: {row['소재지전화']}<br>
-        주소: {row['도로명전체주소']}
-        """
-    ).add_to(m)
+    for _, row in filtered_df.iterrows():
+        folium.Marker(
+            [row['좌표정보y'], row['좌표정보x']],
+            popup=f"""
+            <b>{row['사업장명']}</b><br>
+            전화: {row['소재지전화']}<br>
+            주소: {row['도로명전체주소']}
+            """
+        ).add_to(m)
 
-st_data = st_folium(m, width=800, height=600)
+    st_folium(m, width=800, height=600)
+else:
+    st.warning("선택한 조건에 맞는 약국 데이터가 없습니다. 지역과 영업상태를 다시 선택해보세요.")
