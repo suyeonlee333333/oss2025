@@ -36,6 +36,36 @@ for _, row in df.iterrows():
 # Streamlit에 전체 부산시 지도 표시
 st_folium(m, width=700, height=500)
 
+# 약국 검색 기능
+search_term = st.text_input("검색할 약국명을 입력하세요:")
+
+# 약국 검색 결과 필터링
+if search_term:
+    filtered_search = df[df["약국명"].str.contains(search_term, case=False, na=False)]  # 대소문자 구분 없이 검색
+    if not filtered_search.empty:
+        st.write(f"**검색 결과**: {len(filtered_search)}개 약국이 검색되었습니다.")
+        # 검색된 약국의 지도 표시
+        m_search = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+
+        for _, row in filtered_search.iterrows():
+            name = row["약국명"]
+            address = row["소재지(도로명)"]
+            phone = row["전화번호"]
+            lat = row["위도"]
+            lon = row["경도"]
+
+            popup_text = f"{name}<br>{address}<br>{phone}"
+            folium.Marker([lat, lon], popup=popup_text).add_to(m_search)
+
+        # Streamlit에 검색된 약국 지도 표시
+        st_folium(m_search, width=700, height=500)
+        
+        # 검색된 약국 목록 표시
+        st.write("### 📋 검색된 약국 목록")
+        st.dataframe(filtered_search[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
+    else:
+        st.write("**검색 결과가 없습니다.**")
+
 # 선택한 구의 약국 필터링
 filtered_df = df[df["관리지역"] == selected_district]
 
