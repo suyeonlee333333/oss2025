@@ -1,39 +1,28 @@
-import streamlit as st
-import pandas as pd
 import folium
-from folium import plugins
-import geopandas as gpd
-from geopy.geocoders import Nominatim
+import pandas as pd
+import streamlit as st
 
+# 데이터 불러오기
+df = pd.read_csv("night_pharmacy1.csv", encoding="utf-8-sig")
 
+# 구 이름 추출
+df['구'] = df['관리지역'].str.extract(r'([가-힣]+구)')
+구_목록 = df['구'].dropna().unique()
 
-# CSV 파일 불러오기
-df = pd.read_csv("night_pharmacy1.csv")
+# Streamlit에서 구 선택
+구_선택 = st.selectbox('구 선택', 구_목록)
 
-# Streamlit 앱 설정
-st.title("부산시 심야 약국 지도")
-st.markdown("### 구 선택")
-
-# 구 리스트 가져오기
-districts = df['소재지(도로명)'].apply(lambda x: x.split()[0]).unique()
-selected_district = st.selectbox("구를 선택하세요", districts)
-
-# 구에 해당하는 데이터 필터링
-district_data = df[df['소재지(도로명)'].str.contains(selected_district)]
+# 선택한 구에 해당하는 데이터 필터링
+df_선택_구 = df[df['구'] == 구_선택]
 
 # 지도 생성
-m = folium.Map(location=[district_data['위도'].mean(), district_data['경도'].mean()], zoom_start=12)
+map = folium.Map(location=[35.1796, 129.0756], zoom_start=12)  # 부산 중심 좌표
 
-# 약국 마커 추가
-for idx, row in district_data.iterrows():
-    folium.Marker([row['위도'], row['경도']], 
-                  popup=f"약국명: {row['약국명']}<br>전화번호: {row['전화번호']}<br>관리지역: {row['관리지역']}",
-                  icon=folium.Icon(color="blue")).add_to(m)
+# 선택한 구에 대한 마커 추가
+for idx, row in df_선택_구.iterrows():
+    lat = row['위도'] if pd.notna(row['위도']) else 0
+    lon = row['경도'] if pd.notna(row['경도']) else 0
+    folium.Marker([lat, lon], popup=row['약국명']).add_to(map)
 
-# 지도를 HTML로 렌더링
-st.markdown("### 심야 약국 위치")
-st.components.v1.html(m._repr_html_(), height=500)
-
-# 필터링된 데이터 테이블 보여주기
-st.markdown("### 선택한 구의 약국 리스트")
-st.write(district_data[['약국명', '소재지(도로명)', '전화번호', '관리지역']])
+# 지도 표시
+st.write(map)
