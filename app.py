@@ -5,8 +5,6 @@ from folium import plugins
 import geopandas as gpd
 from geopy.geocoders import Nominatim
 
-pip install geopy
-
 # CSV 파일을 읽을 때 인코딩을 지정하여 문제 해결
 df = pd.read_csv("night_pharmacy.csv", encoding="utf-8-sig")  # 혹은 "ISO-8859-1" 또는 "latin1"을 시도할 수 있음
 
