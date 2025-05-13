@@ -41,6 +41,12 @@ for _, row in filtered_df.iterrows():
 st.title("💊 부산 심야약국 위치 지도")
 st.write(f"선택한 지역: **{selected_district}**")
 st_folium(m, width=700, height=500)
+for index, row in filtered_df.iterrows():
+    popup_text = f"{row['약국명']}<br>{row['소재지(도로명)']}<br>{row['전화번호']}"
+    folium.Marker(
+        [row['위도'], row['경도']],
+        popup=folium.Popup(popup_text, max_width=300)  # 여기 max_width 설정이 핵심!
+    ).add_to(m)
 
 # 선택한 약국 표 표시
 st.write("### 📋 약국 목록")
