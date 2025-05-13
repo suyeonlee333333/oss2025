@@ -87,19 +87,7 @@ if selected_district:
         st.markdown("**📋 약국 목록**")
         st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
 
-        # 📅 약국 개설일 입력 받기 (Streamlit date_input)
-        st.subheader("📅 약국 개설일")
-        opening_date = st.date_input("약국 개설일을 선택하세요:")
-        st.write(f"선택한 개설일: {opening_date}")
-
-        # 📝 약국 추가 정보 입력 받기 (Streamlit text_area)
-        st.subheader("📝 약국 추가 정보")
-        additional_info = st.text_area("약국에 대해 추가 정보를 입력하세요:", height=100)
-        if additional_info:
-            st.write("입력된 추가 정보:")
-            st.write(additional_info)
-
-        # 지도 생성
+                # 지도 생성
         center_lat = filtered_df["위도"].mean()
         center_lon = filtered_df["경도"].mean()
         m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
@@ -137,3 +125,17 @@ if selected_district:
         st.warning("해당 지역에 약국 데이터가 없습니다.")
 else:
     st.info("💡 지역 버튼을 눌러 심야약국 위치를 확인하세요.")
+
+        # 약국 방문일 입력 받기 (Streamlit date_input)
+        st.subheader("📅 약국 방문일")
+        opening_date = st.date_input("약국 방문일을 선택하세요:")
+        st.write(f"선택한 방문일: {opening_date}")
+
+        # 약국 추가 정보 입력 받기 (Streamlit text_area)
+        st.subheader("📝 약국 추가 정보")
+        additional_info = st.text_area("약국에 대해 추가 정보(의약품 종류/가격)를 입력하세요:", height=100)
+        if additional_info:
+            st.write("입력된 추가 정보:")
+            st.write(additional_info)
+
+
