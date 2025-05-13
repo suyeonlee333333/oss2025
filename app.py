@@ -5,66 +5,71 @@ from streamlit_folium import st_folium
 
 # CSV 파일 불러오기
 df = pd.read_csv("night_pharmacy1.csv", encoding="utf-8-sig")
+df = df.dropna(subset=["위도", "경도"])  # 위도/경도 값 없는 행 제거
 
-# 위도/경도 값이 없는 행 제거
-df = df.dropna(subset=["위도", "경도"])
-
-# 사이드바 - 구 선택
-districts = sorted(df["관리지역"].unique())
-selected_district = st.sidebar.selectbox("구를 선택하세요", districts)
-
-# 전체 부산시 심야약국 지도를 먼저 표시
+# 앱 제목
 st.title("💊 부산 심야약국 위치 지도")
 
-# 전체 지도의 중심 위치 설정 (기본은 부산 중심 좌표)
-center_lat, center_lon = 35.1796, 129.0756  # 부산 중심
+# ---------------------------
+# 🔍 약국 검색 기능 (지도보다 위에 위치)
+# ---------------------------
+st.subheader("🔍 약국명으로 검색")
 
-# Folium 지도 생성 (전체 부산시)
-m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+search_term = st.text_input("약국명을 입력하세요:")
 
-# 전체 심야약국 마커 추가
-for _, row in df.iterrows():
-    name = row["약국명"]
-    address = row["소재지(도로명)"]
-    phone = row["전화번호"]
-    lat = row["위도"]
-    lon = row["경도"]
-
-    popup_text = f"{name}<br>{address}<br>{phone}"
-    folium.Marker([lat, lon], popup=popup_text).add_to(m)
-
-# Streamlit에 전체 부산시 지도 표시
-st_folium(m, width=700, height=500)
-
-# 여기부터 수정된 부분: 약국 검색 기능을 추가하는 부분입니다.
-st.subheader("🔍 약국 검색 기능")
-
-# 약국 검색 기능
-search_term = st.text_input("검색할 약국명을 입력하세요:")
-
-# 약국 검색 결과 필터링
 if search_term:
-    filtered_search = df[df["약국명"].str.contains(search_term, case=False, na=False)]  # 대소문자 구분 없이 검색
+    filtered_search = df[df["약국명"].str.contains(search_term, case=False, na=False)]
     if not filtered_search.empty:
-        st.write(f"**검색 결과**: {len(filtered_search)}개 약국이 검색되었습니다.")
-        # 검색된 약국의 지도 표시
-        m_search = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+        st.success(f"{len(filtered_search)}개 약국이 검색되었습니다.")
+        
+        # 검색된 약국 지도
+        center_lat = filtered_search["위도"].mean()
+        center_lon = filtered_search["경도"].mean()
+        m_search = folium.Map(location=[center_lat, center_lon], zoom_start=13)
 
         for _, row in filtered_search.iterrows():
-            name = row["약국명"]
-            address = row["소재지(도로명)"]
-            phone = row["전화번호"]
-            lat = row["위도"]
-            lon = row["경도"]
+            popup_text = f"{row['약국명']}<br>{row['소재지(도로명)']}<br>{row['전화번호']}"
+            folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m_search)
 
-            popup_text = f"{name}<br>{address}<br>{phone}"
-            folium.Marker([lat, lon], popup=popup_text).add_to(m_search)
-
-        # Streamlit에 검색된 약국 지도 표시
         st_folium(m_search, width=700, height=500)
-        
-        # 검색된 약국 목록 표시
         st.write("### 📋 검색된 약국 목록")
         st.dataframe(filtered_search[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
     else:
-        st.write("**검색 결과가 없습니다.**")
+        st.warning("검색 결과가 없습니다.")
+
+# ---------------------------
+# 📍 구 선택 버튼 (지도 아래)
+# ---------------------------
+st.subheader("📍 지역별 약국 보기")
+
+districts = sorted(df["관리지역"].unique())
+
+# 버튼 누르면 해당 구 필터링
+selected_district = None
+cols = st.columns(4)  # 4열로 버튼 나열
+
+for i, district in enumerate(districts):
+    if cols[i % 4].button(district):
+        selected_district = district
+
+# ---------------------------
+# 🗺️ 지도 표시 (구 선택 시)
+# ---------------------------
+if selected_district:
+    st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
+
+    filtered_df = df[df["관리지역"] == selected_district]
+    center_lat = filtered_df["위도"].mean()
+    center_lon = filtered_df["경도"].mean()
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=13)
+
+    for _, row in filtered_df.iterrows():
+        popup_text = f"{row['약국명']}<br>{row['소재지(도로명)']}<br>{row['전화번호']}"
+        folium.Marker([row["위도"], row["경도"]], popup=popup_text).add_to(m)
+
+    st_folium(m, width=700, height=500)
+    st.write("### 📋 약국 목록")
+    st.dataframe(filtered_df[["약국명", "소재지(도로명)", "전화번호"]].reset_index(drop=True))
+else:
+    st.markdown("💡 지역 버튼을 눌러 심야약국 위치를 확인하세요.")
