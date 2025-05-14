@@ -62,7 +62,7 @@ if search_term:
         st.warning("검색 결과가 없습니다.")
 
 # 구 선택
-st.subheader("📍 지역별 약국 보기")
+st.subheader("📍 구·군별 약국 보기")
 districts = sorted(df["관리지역"].unique())
 
 if "selected_district" not in st.session_state:
@@ -77,7 +77,7 @@ selected_district = st.session_state.selected_district
 
 # 선택한 지역 약국 목록 + 지도
 if selected_district:
-    st.markdown(f"### 🏙️ 선택한 지역: **{selected_district}**")
+    st.markdown(f"### 🏙️ 선택한 구·군: **{selected_district}**")
     filtered_df = df[df["관리지역"].str.strip() == selected_district]  # 정확히 일치하도록 수정!
 
     if not filtered_df.empty:
