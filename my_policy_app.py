@@ -12,6 +12,8 @@ def load_data():
     df_ride['연도'] = pd.to_numeric(df_ride['연도'], errors='coerce')
     df_ride['월'] = pd.to_numeric(df_ride['월'], errors='coerce')
     df_ride = df_ride.dropna(subset=['연도', '월'])
+    df_ride['연도'] = df_ride['연도'].astype(int)
+    df_ride['월'] = df_ride['월'].astype(int)
     df_ride['YearMonth'] = pd.to_datetime(dict(year=df_ride['연도'], month=df_ride['월'], day=1))
 
     # df_pop 전처리
@@ -19,17 +21,16 @@ def load_data():
     df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
     df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'].astype(str) + '-1', errors='coerce')
 
-    # 필요한 컬럼만 숫자로 변환 (세 번째 컬럼부터)
+    # 숫자형 데이터로 변환: 세 번째 열부터 (df_pop.iloc[:, 2:])
     for col in df_pop.columns[2:]:
-        df_pop[col] = pd.to_numeric(df_pop[col], errors='coerce')
+        # Series만 to_numeric 적용
+        if isinstance(df_pop[col], pd.Series):
+            df_pop[col] = pd.to_numeric(df_pop[col], errors='coerce')
 
     return df_ride, df_pop
 
 df_ride, df_pop = load_data()
 
-
-# 데이터 불러오기
-df_ride, df_pop = load_data()
 
 
 
