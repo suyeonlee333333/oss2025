@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 @st.cache_data
 def load_data():
     # 파일명과 경로는 실제 데이터에 맞게 수정하세요
-    return pd.read_csv('results_df.csv', parse_dates=['YearMonth'])
+    return pd.read_csv('re_study_data.xlsx', parse_dates=['YearMonth'])
 
 df = load_data()
 
