@@ -8,34 +8,46 @@ def load_data():
     df_ride = pd.read_excel('re_study_data.xlsx', sheet_name=0)
     df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')
 
-    # 1. df_ride 처리
+    # --- df_ride 처리 ---
     df_ride.columns = df_ride.columns.str.strip()
+    
+    # '연도', '월' 숫자로 변환
     df_ride['연도'] = pd.to_numeric(df_ride['연도'], errors='coerce')
     df_ride['월'] = pd.to_numeric(df_ride['월'], errors='coerce')
+
+    # 결측값 제거
     df_ride = df_ride.dropna(subset=['연도', '월'])
+
+    # 정수형으로 바꾸기 (to_datetime 에러 방지)
+    df_ride['연도'] = df_ride['연도'].astype(int)
+    df_ride['월'] = df_ride['월'].astype(int)
+
+    # 날짜 컬럼 생성
     df_ride['YearMonth'] = pd.to_datetime(dict(year=df_ride['연도'], month=df_ride['월'], day=1))
 
-    # 2. df_pop 처리
+    # --- df_pop 처리 ---
     df_pop.columns = df_pop.columns.str.strip()
-    
-    # 첫 번째 열은 '연월' → datetime으로 변환
+
+    # 첫 번째 열 이름 바꾸기
     df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
+
+    # '연월' → datetime으로 변환 (예: "2021-1" → "2021-01-01")
     df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'].astype(str) + '-1', errors='coerce')
 
-    # 숫자 데이터만 추출 (고령 인구 열 포함)
+    # 숫자 열만 선택해서 변환
     df_pop_numeric = df_pop.drop(columns=['연월']).copy()
     for col in df_pop_numeric.columns:
-        df_pop_numeric[col] = pd.to_numeric(df_pop_numeric[col], errors='coerce')
-
-    # YearMonth 붙이기
-    df_pop_numeric['YearMonth'] = df_pop['YearMonth']
+        if col != 'YearMonth':
+            df_pop_numeric[col] = pd.to_numeric(df_pop_numeric[col], errors='coerce')
 
     return df_ride, df_pop_numeric
 
-# 데이터 로딩
+# 데이터 불러오기
 df_ride, df_pop = load_data()
 
-# 아래부터 df_ride와 df_pop을 활용한 분석/시각화 코드 이어서 작성하면 됩니다.
+
+
+# 분석/시각화 코드
 
 
 # 데이터 불러오기
