@@ -1,52 +1,95 @@
-# my_policy_app.py
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# 1. 데이터 불러오기
 @st.cache_data
 def load_data():
-    return pd.read_csv('results_df.csv', parse_dates=['YearMonth'])
+    # 1번 시트: 월별 무임승차 데이터
+    df_ride = pd.read_excel('re_study_data.xlsx', sheet_name=0)
+    # 2번 시트: 월별 인구 수 (연령별)
+    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')
 
-df = load_data()
+    # 월-연도 컬럼 생성
+    if 'YearMonth' not in df_ride.columns:
+        df_ride['YearMonth'] = pd.to_datetime(df_ride[['연도', '월']].assign(일=1))
+    if 'YearMonth' not in df_pop.columns:
+        df_pop['YearMonth'] = pd.to_datetime(df_pop[['연도', '월']].assign(일=1))
 
-st.title("🚇 무임승차 연령 기준 조정에 따른 손실 분석")
-st.markdown("특정 월을 기준으로 무임승차 연령 기준을 조정할 때 발생하는 손실을 시각화하고, 정책적으로 가장 유리한 기준을 제안합니다.")
+    return df_ride, df_pop
 
-# 2. 사용자 선택 - 분석할 월
-available_months = df['YearMonth'].dt.strftime('%Y-%m').sort_values().unique()
-selected_month = st.selectbox("📅 분석할 월을 선택하세요:", available_months)
+df_ride, df_pop = load_data()
 
-# 3. 선택된 월 기준 데이터 필터링
+st.title("🚇 무임승차 연령 기준 조정 시 예상 손실 예측")
+
+# 1) 월 선택
+available_months = df_ride['YearMonth'].dt.strftime('%Y-%m').sort_values().unique()
+selected_month = st.selectbox("📅 분석할 월 선택:", available_months)
 selected_date = pd.to_datetime(selected_month + "-01")
-filtered_df = df[df['YearMonth'] == selected_date]
 
-if filtered_df.empty:
-    st.warning("선택한 월의 데이터가 없습니다.")
+# 해당 월 데이터 필터링
+ride_data = df_ride[df_ride['YearMonth'] == selected_date]
+pop_data = df_pop[df_pop['YearMonth'] == selected_date]
+
+if ride_data.empty or pop_data.empty:
+    st.warning("선택한 월에 데이터가 충분하지 않습니다.")
 else:
-    # 4. 최적 연령 기준 계산 (총손실 최소)
-    best_row = filtered_df.loc[filtered_df['EstimatedTotalLoss'].idxmin()]
-    best_age = int(best_row['AgeThreshold'])
-    min_loss = int(best_row['EstimatedTotalLoss'])
+    # 2) 기준 연령 선택 (예: 60~70세)
+    min_age = int(pop_data['연령'].min())
+    max_age = int(pop_data['연령'].max())
+    selected_age = st.slider("🔢 무임승차 기준 연령 선택", min_age, max_age, value=65)
 
-    st.subheader("📌 정책 제안")
+    # 3) 현재(65세) 기준 데이터
+    base_ride = ride_data.iloc[0]
+    base_free_ride = base_ride['무임인원']
+    base_loss = base_ride['무임손실 (백만)']
+    loss_per_person = base_loss / base_free_ride if base_free_ride > 0 else 0
+
+    # 4) 선택 연령 이상 인구 수
+    eligible_pop = pop_data[pop_data['연령'] >= selected_age]['인구수'].sum()
+
+    # 5) 예상 손실액
+    estimated_loss = eligible_pop * loss_per_person
+
+    # 6) 결과 출력
+    st.subheader("📌 예상 무임승차 인원 및 손실액")
     st.markdown(f"""
-    - **분석 월**: {selected_month}  
-    - **가장 낮은 총손실액을 기록한 연령 기준**: **{best_age}세**  
-    - **예상 총손실액**: **{min_loss:,}백만원**
+    - 무임승차 기준 연령: **{selected_age}세 이상**  
+    - 예상 무임승차 인원: **{eligible_pop:,}명**  
+    - 1인당 평균 무임 손실액: **{loss_per_person:.2f} 백만원**  
+    - 예상 총 무임 손실액: **{estimated_loss:,.2f} 백만원**  
     """)
 
-    # 5. 시각화
-    st.subheader("📊 연령 기준별 손실 추이")
+    # 7) 기준 연령별 추이 시각화
+    st.subheader("📊 기준 연령별 예상 무임손실 추이")
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(filtered_df['AgeThreshold'], filtered_df['EstimatedLoss'], label='Estimated Loss (백만원)', marker='o')
-    ax.plot(filtered_df['AgeThreshold'], filtered_df['EstimatedTotalLoss'], label='Estimated Total Loss (백만원)', marker='s')
-    ax.axvline(best_age, color='red', linestyle='--', label=f'최적 기준: {best_age}세')
-    ax.set_title(f'{selected_month} 기준 연령 기준별 손실 추이')
-    ax.set_xlabel('연령 기준')
-    ax.set_ylabel('손실액 (백만원)')
-    ax.legend()
-    ax.grid(True)
+    age_range = range(min_age, max_age + 1)
+    estimated_ride_list = []
+    estimated_loss_list = []
+
+    for age in age_range:
+        pop_sum = pop_data[pop_data['연령'] >= age]['인구수'].sum()
+        estimated_ride_list.append(pop_sum)
+        estimated_loss_list.append(pop_sum * loss_per_person)
+
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    ax2 = ax1.twinx()
+
+    ax1.plot(age_range, estimated_ride_list, color='blue', marker='o', label='예상 무임 인원')
+    ax2.plot(age_range, estimated_loss_list, color='red', marker='s', label='예상 무임 손실액 (백만원)')
+
+    ax1.set_xlabel("무임승차 기준 연령")
+    ax1.set_ylabel("예상 무임 인원", color='blue')
+    ax2.set_ylabel("예상 무임 손실액 (백만원)", color='red')
+
+    ax1.tick_params(axis='y', labelcolor='blue')
+    ax2.tick_params(axis='y', labelcolor='red')
+
+    ax1.grid(True)
+    ax1.set_title(f"{selected_month} 기준 무임승차 기준 연령별 예상 무임 인원 및 손실액")
+
+    # 범례 추가
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper right')
+
     st.pyplot(fig)
