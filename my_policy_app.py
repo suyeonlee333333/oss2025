@@ -4,43 +4,29 @@ import matplotlib.pyplot as plt
 
 @st.cache_data
 def load_data():
-    # 데이터 불러오기
     df_ride = pd.read_excel('re_study_data.xlsx', sheet_name=0)
     df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')
 
-    # --- df_ride 처리 ---
+    # df_ride 전처리
     df_ride.columns = df_ride.columns.str.strip()
-    
-    # '연도', '월' 숫자로 변환
     df_ride['연도'] = pd.to_numeric(df_ride['연도'], errors='coerce')
     df_ride['월'] = pd.to_numeric(df_ride['월'], errors='coerce')
-
-    # 결측값 제거
     df_ride = df_ride.dropna(subset=['연도', '월'])
-
-    # 정수형으로 바꾸기 (to_datetime 에러 방지)
-    df_ride['연도'] = df_ride['연도'].astype(int)
-    df_ride['월'] = df_ride['월'].astype(int)
-
-    # 날짜 컬럼 생성
     df_ride['YearMonth'] = pd.to_datetime(dict(year=df_ride['연도'], month=df_ride['월'], day=1))
 
-    # --- df_pop 처리 ---
+    # df_pop 전처리
     df_pop.columns = df_pop.columns.str.strip()
-
-    # 첫 번째 열 이름 바꾸기
     df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
-
-    # '연월' → datetime으로 변환 (예: "2021-1" → "2021-01-01")
     df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'].astype(str) + '-1', errors='coerce')
 
-    # 숫자 열만 선택해서 변환
-    df_pop_numeric = df_pop.drop(columns=['연월']).copy()
-    for col in df_pop_numeric.columns:
-        if col != 'YearMonth':
-            df_pop_numeric[col] = pd.to_numeric(df_pop_numeric[col], errors='coerce')
+    # 필요한 컬럼만 숫자로 변환 (세 번째 컬럼부터)
+    for col in df_pop.columns[2:]:
+        df_pop[col] = pd.to_numeric(df_pop[col], errors='coerce')
 
-    return df_ride, df_pop_numeric
+    return df_ride, df_pop
+
+df_ride, df_pop = load_data()
+
 
 # 데이터 불러오기
 df_ride, df_pop = load_data()
