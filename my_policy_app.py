@@ -34,18 +34,33 @@ def load_data_and_train_models():
 
 
 @st.cache_data
+@st.cache_data
+@st.cache_data
 def load_population_data():
-    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수', header=1)  # 헤더 1행부터 시작
-    df_pop.columns = df_pop.columns.str.strip()
-    df_pop.rename(columns={df_pop.columns[0]: 'YearMonth'}, inplace=True)
-    df_pop = df_pop[~df_pop['YearMonth'].astype(str).str.contains('합')]
+    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수', header=0)
+
+    # 컬럼 정리
+    df_pop.columns = df_pop.columns.astype(str).str.strip()
+
+    # 첫 번째 열 이름 확인해서 'YearMonth'로 변경
+    if '월간 / 나이' in df_pop.columns:
+        df_pop.rename(columns={'월간 / 나이': 'YearMonth'}, inplace=True)
+    elif df_pop.columns[0] != 'YearMonth':
+        df_pop.rename(columns={df_pop.columns[0]: 'YearMonth'}, inplace=True)
+
+    # '총' 등 제거 (혹시 포함된 행이 있으면)
+    df_pop = df_pop[~df_pop['YearMonth'].astype(str).str.contains('총')]
+
+    # 날짜형 변환
     df_pop['YearMonth'] = pd.to_datetime(df_pop['YearMonth'], errors='coerce')
     df_pop = df_pop.dropna(subset=['YearMonth'])
 
-    # 🔍 디버깅
-    st.write("🔎 정리된 칼럼들:", df_pop.columns.tolist())
+    # 디버그 출력
+    st.write("✅ df_pop 컬럼 목록:", df_pop.columns.tolist())
+    st.write("📊 df_pop 샘플 데이터:", df_pop.head())
 
     return df_pop
+
 
 
 
