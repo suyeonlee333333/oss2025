@@ -45,12 +45,20 @@ def load_population_data():
 
 
 def estimate_free_riders_by_virtual_policy(age, df, total_free_riders):
-    total_old_population = df['SeniorPopulation'].sum()
-    eligible_df = df[df['Age'] >= age]
-    if eligible_df.empty or total_old_population == 0:
+    # 전체 고령 인구는 65세 이상 전체 인구 합으로 고정
+    total_old_population = df[df['Age'] >= 65]['SeniorPopulation'].sum()
+    
+    # 선택한 기준 연령 이상 인구 합
+    eligible_population = df[df['Age'] >= age]['SeniorPopulation'].sum()
+    
+    # total_old_population이 0이면 0 반환
+    if total_old_population == 0:
         return 0
-    eligible_population = eligible_df['SeniorPopulation'].sum()
+    
+    # 비율 계산
     eligible_ratio = eligible_population / total_old_population
+    
+    # 무임승차 인원 예상 계산
     return total_free_riders * eligible_ratio
 
 
