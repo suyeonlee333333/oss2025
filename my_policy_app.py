@@ -88,7 +88,7 @@ if df_ride_month.empty or df_pop_month.empty:
     st.warning("선택한 월에 대한 데이터가 부족합니다.")
 else:
     # 인구 데이터를 정리 (연령 컬럼 추출)
-    age_columns = [col for col in df_pop_month.columns if col.isnumeric()]
+    age_columns = [col for col in df_pop_month.columns if str(col).isnumeric()]
     df_age = df_pop_month[age_columns].melt(var_name='Age', value_name='SeniorPopulation')
     df_age['Age'] = df_age['Age'].astype(int)
     df_age = df_age.dropna()
