@@ -87,14 +87,6 @@ def predict_free_ride_loss(age_threshold):
 예상 무임승차 인원: {int(count):,}명
 예상 손실액: {loss:.2f} 백만원
 예상 누적 손실액: {total:.2f} 백만원"""
-with gr.Blocks() as demo:
-    gr.Markdown("🚇 **무임승차 손실 예측 시뮬레이터**")
-    age_input = gr.Slider(minimum=60, maximum=100, step=1, label="기준 연령 (세)")
-    output = gr.Textbox(label="예측 결과")
-
-    age_input.change(predict_free_ride_loss, inputs=age_input, outputs=output)
-
-demo.launch()
 
 
 
