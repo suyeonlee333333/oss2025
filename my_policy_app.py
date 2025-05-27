@@ -8,19 +8,22 @@ def load_data():
     df_ride = pd.read_excel('re_study_data.xlsx', sheet_name=0)  # 첫 번째 시트: 지하철 이용 데이터
     df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')  # "월별 인구 수" 시트: 고령 인구 등
 
-    # df_ride 전처리
-    df_ride.columns = df_ride.columns.str.strip()  # 공백 제거
-    df_ride['연도'] = pd.to_numeric(df_ride['연도'], errors='coerce')
-    df_ride['월'] = pd.to_numeric(df_ride['월'], errors='coerce')
-    df_ride = df_ride.dropna(subset=['연도', '월'])
-    df_ride['연도'] = df_ride['연도'].astype(int)
-    df_ride['월'] = df_ride['월'].astype(int)
-    df_ride['YearMonth'] = pd.to_datetime(dict(year=df_ride['연도'], month=df_ride['월'], day=1))
-
     # df_pop 전처리
     df_pop.columns = df_pop.columns.str.strip()
     df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
     df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'].astype(str) + '-1', errors='coerce')
+
+    # df_pop 전처리: '연월' 열 → 'YearMonth' 생성
+    df_pop.columns = df_pop.columns.str.strip()
+    df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
+
+    # '연월' 형식이 'YYYY-MM' 또는 'YYYY.MM' 또는 'YYYYMM' 형식일 수 있음
+    # 아래와 같이 강력하게 처리
+    df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'], errors='coerce', format='%Y-%m')  # 또는 format='%Y%m'
+    
+    # 생성 결과 확인
+    # st.write(df_pop[['연월', 'YearMonth']].dropna().head())
+
 
     # df_pop 정리: 세 번째 열부터 숫자형으로 변환
     for col in df_pop.columns[2:]:
@@ -85,6 +88,10 @@ else:
         pop_sum = pop_data.loc[:, str(age):].sum(axis=1).values[0]
         estimated_ride_list.append(pop_sum)
         estimated_loss_list.append(pop_sum * loss_per_person)
+    st.write("선택된 날짜:", selected_date)
+    st.write("ride_data rows:", ride_data.shape[0])
+    st.write("pop_data rows:", pop_data.shape[0])
+
 
     # 시각화
     fig, ax1 = plt.subplots(figsize=(10, 6))
