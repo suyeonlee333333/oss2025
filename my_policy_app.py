@@ -35,17 +35,18 @@ def load_data_and_train_models():
 
 @st.cache_data
 def load_population_data():
-    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')
+    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수', header=1)  # 헤더 1행부터 시작
     df_pop.columns = df_pop.columns.str.strip()
     df_pop.rename(columns={df_pop.columns[0]: 'YearMonth'}, inplace=True)
     df_pop = df_pop[~df_pop['YearMonth'].astype(str).str.contains('합')]
     df_pop['YearMonth'] = pd.to_datetime(df_pop['YearMonth'], errors='coerce')
     df_pop = df_pop.dropna(subset=['YearMonth'])
 
-    # 🔍 디버깅용: 칼럼 이름 출력해보기
-    st.write("칼럼 이름 확인:", df_pop.columns.tolist())
+    # 🔍 디버깅
+    st.write("🔎 정리된 칼럼들:", df_pop.columns.tolist())
 
     return df_pop
+
 
 
 
