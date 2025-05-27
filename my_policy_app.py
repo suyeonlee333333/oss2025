@@ -71,9 +71,13 @@ def simulate_loss(age, df_age, total_free_riders, model_2, model_3):
     riders = estimate_free_riders(age, df_age, total_free_riders)
     if riders == 0:
         return 0, 0, 0
-    loss = model_2.predict([[riders]])[0]
-    cum_loss = model_3.predict([[loss]])[0]
+    # DataFrame으로 예측 + 음수 방지
+    loss = model_2.predict(pd.DataFrame({'FreeRidePassengers': [riders]}))[0]
+    loss = max(0, loss)
+    cum_loss = model_3.predict(pd.DataFrame({'LossFromFreeRides_MillionKRW': [loss]}))[0]
+    cum_loss = max(0, cum_loss)
     return riders, loss, cum_loss
+
 
 def batch_simulate_loss(df_age, total_free_riders, model_2, model_3, min_age, max_age):
     riders_list, loss_list, cum_list = [], [], []
