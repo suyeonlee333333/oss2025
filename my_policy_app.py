@@ -62,6 +62,41 @@ def simulate_loss(age, df, total_free_riders, model_2, model_3):
     total = float(model_3.predict([[loss]])[0])
     return count, loss, total
 
+def predict_free_ride_loss(age_threshold):
+    # merged_df에서 가장 최근 월 데이터만 사용 (예시: 2024-12 등)
+    latest_row = merged_df.sort_values('YearMonth').iloc[-1]
+
+    total_passengers = latest_row['SubwayUsage']
+    total_free_riders = latest_row['FreeRidePassengers']
+
+    age_data = latest_row.filter(regex=r'^\d+$')
+    age_data.index = age_data.index.astype(int)
+
+    # 최근 달에 대한 월별 age별 population DataFrame 구성
+    df_month = pd.DataFrame({
+        'Age': age_data.index,
+        'SeniorPopulation': age_data.values,
+        'FreeRidePassengers': [0] * len(age_data),
+        'SubwayUsage': total_passengers
+    })
+
+    # 예측 실행
+    count, loss, total = simulate_loss(age_threshold, df_month, total_free_riders)
+
+    return f"""기준 연령: {age_threshold}세 이상
+예상 무임승차 인원: {int(count):,}명
+예상 손실액: {loss:.2f} 백만원
+예상 누적 손실액: {total:.2f} 백만원"""
+with gr.Blocks() as demo:
+    gr.Markdown("🚇 **무임승차 손실 예측 시뮬레이터**")
+    age_input = gr.Slider(minimum=60, maximum=100, step=1, label="기준 연령 (세)")
+    output = gr.Textbox(label="예측 결과")
+
+    age_input.change(predict_free_ride_loss, inputs=age_input, outputs=output)
+
+demo.launch()
+
+
 
 # --------------------------
 # 2. Streamlit 앱 실행
@@ -105,6 +140,7 @@ else:
     - 예상 손실액: **{loss:,.2f} 백만원**  
     - 예상 누적 손실액: **{total:,.2f} 백만원**
     """)
+
 
     # 그래프 그리기
     st.subheader("기준 연령 변화에 따른 손실 추이")
