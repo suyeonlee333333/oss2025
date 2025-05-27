@@ -35,7 +35,7 @@ df_ride, df_pop = load_data()
 
 # 선택 가능한 월 목록 구성
 available_months = df_ride['YearMonth'].dt.strftime('%Y-%m').sort_values().unique()
-selected_month = st.selectbox("\ud83d\udcc5 \ubd84석\ud560 \uc6d4 \uc120\ud0dd:", available_months)
+selected_month = st.selectbox("분석할 월 선택:", available_months)
 selected_date = pd.to_datetime(selected_month + "-01")
 
 # 해당 월 데이터 필터링
@@ -53,7 +53,7 @@ else:
     min_age = min(age_list)
     max_age = max(age_list)
 
-    selected_age = st.slider("\ud83d\udd22 \ubb34임승차 \uae30준 \uc5f0령 \uc120\ud0dd", min_age, max_age, value=65)
+    selected_age = st.slider("무임승차 기준 연령 선택", min_age, max_age, value=65)
 
     # ride_data에서 무임 인원, 손실 추출
     base_ride = ride_data.iloc[0]
@@ -66,7 +66,8 @@ else:
     estimated_loss = eligible_pop * loss_per_person
 
     # 결과 출력
-    st.subheader("\ud83d\udccc \uc608상 \ubb34임승차 인원 및 손실액")
+    st.subheader("예상 무임승차 인원 및 손실액")
+
     st.markdown(f"""
     - 무임승차 기준 연령: **{selected_age}세 이상**  
     - 예상 무임승차 인원: **{eligible_pop:,.0f}명**  
@@ -75,8 +76,7 @@ else:
     """)
 
     # 기준 연령 변화에 따른 시나리오 분석
-    st.subheader("\ud83d\udcca \uae30준 \uc5f0령별 \uc608상 \ubb34임승승 추이")
-
+    st.subheader("기준 연령별 예상 무임승차 추이")
     age_range = range(min_age, max_age + 1)
     estimated_ride_list = []
     estimated_loss_list = []
