@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from matplotlib import font_manager as fm, rc
 from datetime import datetime
 
@@ -9,7 +9,6 @@ from datetime import datetime
 # 한글 폰트 설정 함수
 # -----------------------------
 def set_korean_font():
-    # 기본적으로 사용할 수 있는 나눔고딕 또는 다른 폰트 설정
     try:
         font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"  # 리눅스용
         font_name = fm.FontProperties(fname=font_path, size=10).get_name()
@@ -35,9 +34,9 @@ def load_data_and_train_models():
     })
     df['YearMonth'] = pd.to_datetime(df['Year'].astype(str) + '-' + df['Month'].astype(str).str.zfill(2))
 
-    model_1 = LinearRegression().fit(df[['Age']], df['FreeRidePassengers'])
-    model_2 = LinearRegression().fit(df[['FreeRidePassengers']], df['LossFromFreeRides_MillionKRW'])
-    model_3 = LinearRegression().fit(df[['LossFromFreeRides_MillionKRW']], df['CumulativeLoss_MillionKRW'])
+    model_1 = RandomForestRegressor(random_state=42).fit(df[['Age']], df['FreeRidePassengers'])
+    model_2 = RandomForestRegressor(random_state=42).fit(df[['FreeRidePassengers']], df['LossFromFreeRides_MillionKRW'])
+    model_3 = RandomForestRegressor(random_state=42).fit(df[['LossFromFreeRides_MillionKRW']], df['CumulativeLoss_MillionKRW'])
 
     return df, model_1, model_2, model_3
 
@@ -107,7 +106,6 @@ def main():
         st.warning("선택한 월에 데이터가 없습니다.")
         return
 
-    # 나이별 인구 추출
     age_columns = [col for col in df_pop_month.columns if col.isnumeric()]
     df_age = df_pop_month[age_columns].melt(var_name='Age', value_name='SeniorPopulation')
     df_age['Age'] = df_age['Age'].astype(int)
