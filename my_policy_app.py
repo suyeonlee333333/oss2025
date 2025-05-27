@@ -88,17 +88,20 @@ if df_ride_month.empty or df_pop_month.empty:
     st.warning("선택한 월에 대한 데이터가 부족합니다.")
 else:
     # 인구 데이터를 정리 (연령 컬럼 추출)
+    # 인구 데이터를 정리 (연령 컬럼 추출)
     age_columns = [col for col in df_pop_month.columns if str(col).isnumeric()]
     df_age = df_pop_month[age_columns].melt(var_name='Age', value_name='SeniorPopulation')
     df_age['Age'] = df_age['Age'].astype(int)
     df_age = df_age.dropna()
-
+    
+    # 🔽 슬라이더 범위에 맞게 65세 이상만 필터링
+    df_age = df_age[df_age['Age'] >= 65]
+    
     # 총 무임인원
     total_free_riders = df_ride_month['FreeRidePassengers'].sum()
-
-    # 기준 연령 슬라이더
-    min_age, max_age = df_age['Age'].min(), df_age['Age'].max()
-    selected_age = st.slider("무임승차 기준 연령 선택", min_age, max_age, value=65)
+    
+    # ✅ 슬라이더 범위 고정: 65 ~ 100세
+    selected_age = st.slider("무임승차 기준 연령 선택", 65, 100, value=65)
 
     # 예측 실행
     count, loss, total = simulate_loss(selected_age, df_age, total_free_riders, model_2, model_3)
