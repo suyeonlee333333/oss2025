@@ -5,32 +5,29 @@ import matplotlib.pyplot as plt
 # 데이터 불러오는 함수. 캐시 사용으로 매번 다시 읽지 않음
 @st.cache_data
 def load_data():
-    df_ride = pd.read_excel('re_study_data.xlsx', sheet_name=0)  # 첫 번째 시트: 지하철 이용 데이터
-    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')  # "월별 인구 수" 시트: 고령 인구 등
+    df_ride = pd.read_excel('re_study_data.xlsx', sheet_name=0)
+    df_pop = pd.read_excel('re_study_data.xlsx', sheet_name='월별 인구 수')
+
+    # df_ride 전처리
+    df_ride.columns = df_ride.columns.str.strip()
+    df_ride['연도'] = pd.to_numeric(df_ride['연도'], errors='coerce')
+    df_ride['월'] = pd.to_numeric(df_ride['월'], errors='coerce')
+    df_ride = df_ride.dropna(subset=['연도', '월'])
+    df_ride['연도'] = df_ride['연도'].astype(int)
+    df_ride['월'] = df_ride['월'].astype(int)
+    df_ride['YearMonth'] = pd.to_datetime(df_ride['연도'].astype(str) + '-' + df_ride['월'].astype(str).str.zfill(2))
 
     # df_pop 전처리
     df_pop.columns = df_pop.columns.str.strip()
     df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
     df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'].astype(str) + '-1', errors='coerce')
 
-    # df_pop 전처리: '연월' 열 → 'YearMonth' 생성
-    df_pop.columns = df_pop.columns.str.strip()
-    df_pop.rename(columns={df_pop.columns[0]: '연월'}, inplace=True)
-
-    # '연월' 형식이 'YYYY-MM' 또는 'YYYY.MM' 또는 'YYYYMM' 형식일 수 있음
-    # 아래와 같이 강력하게 처리
-    df_pop['YearMonth'] = pd.to_datetime(df_pop['연월'], errors='coerce', format='%Y-%m')  # 또는 format='%Y%m'
-    
-    # 생성 결과 확인
-    # st.write(df_pop[['연월', 'YearMonth']].dropna().head())
-
-
-    # df_pop 정리: 세 번째 열부터 숫자형으로 변환
     for col in df_pop.columns[2:]:
         if isinstance(df_pop[col], pd.Series):
             df_pop[col] = pd.to_numeric(df_pop[col], errors='coerce')
 
     return df_ride, df_pop
+
 
 # 데이터 불러오기
 st.title("🚇 무임승차 연령 기준 조정 시 예상 손실 예측")
