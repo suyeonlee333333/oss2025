@@ -2,20 +2,27 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from matplotlib import font_manager as fm, rc
 from datetime import datetime
 
-# 파일 이름 상수
-DATA_FILE = 're_study_data.xlsx'
-DATA_SHEET = '학습시킬 데이터'
-MIN_AGE = 65
-MAX_AGE = 100
+# -----------------------------
+# 한글 폰트 설정 함수
+# -----------------------------
+def set_korean_font():
+    # 기본적으로 사용할 수 있는 나눔고딕 또는 다른 폰트 설정
+    try:
+        font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"  # 리눅스용
+        font_name = fm.FontProperties(fname=font_path, size=10).get_name()
+        rc('font', family=font_name)
+    except:
+        st.warning("한글 폰트 로딩에 실패했습니다. 영어로 대체될 수 있습니다.")
 
 # -----------------------------
-# 1. 데이터 로딩 및 모델 학습
+# 데이터 로딩 및 모델 학습
 # -----------------------------
 @st.cache_data
 def load_data_and_train_models():
-    df = pd.read_excel(DATA_FILE, sheet_name=DATA_SHEET)
+    df = pd.read_excel("re_study_data.xlsx", sheet_name="학습시킬 데이터")
     df = df.rename(columns={
         '연령': 'Age',
         '무임인원': 'FreeRidePassengers',
@@ -36,7 +43,7 @@ def load_data_and_train_models():
 
 @st.cache_data
 def load_population_data():
-    df_pop = pd.read_excel(DATA_FILE, sheet_name='월별 인구 수')
+    df_pop = pd.read_excel("re_study_data.xlsx", sheet_name="월별 인구 수")
     df_pop.columns = df_pop.columns.astype(str).str.strip()
 
     if '월간 / 나이' in df_pop.columns:
@@ -51,7 +58,7 @@ def load_population_data():
     return df_pop
 
 # -----------------------------
-# 2. 예측 함수들
+# 예측 함수들
 # -----------------------------
 def estimate_free_riders(age, df_age, total_free_riders):
     eligible_population = df_age[df_age['Age'] >= age]['SeniorPopulation'].sum()
@@ -79,90 +86,81 @@ def batch_simulate_loss(df_age, total_free_riders, model_2, model_3, min_age, ma
     return riders_list, loss_list, cum_list
 
 # -----------------------------
-# 3. Streamlit 메인 앱
+# Streamlit 메인 앱
 # -----------------------------
 def main():
-    st.title("Free Ride Policy Simulation")
+    set_korean_font()
+
+    st.title("무임승차 연령 조정 시나리오 분석")
 
     df_main, model_1, model_2, model_3 = load_data_and_train_models()
     df_pop = load_population_data()
 
     available_months = sorted(set(df_main['YearMonth']) & set(df_pop['YearMonth']))
-    selected_month = st.selectbox("Select Month:", [d.strftime('%Y-%m') for d in available_months])
+    selected_month = st.selectbox("분석할 기준 월 선택:", [d.strftime('%Y-%m') for d in available_months])
     selected_date = pd.to_datetime(selected_month + '-01')
 
     df_ride_month = df_main[df_main['YearMonth'] == selected_date]
     df_pop_month = df_pop[df_pop['YearMonth'] == selected_date]
 
     if df_ride_month.empty or df_pop_month.empty:
-        st.warning("No data for selected month.")
+        st.warning("선택한 월에 데이터가 없습니다.")
         return
 
-    # 나이별 인구
+    # 나이별 인구 추출
     age_columns = [col for col in df_pop_month.columns if col.isnumeric()]
     df_age = df_pop_month[age_columns].melt(var_name='Age', value_name='SeniorPopulation')
     df_age['Age'] = df_age['Age'].astype(int)
-    df_age = df_age[df_age['Age'] >= MIN_AGE]
+    df_age = df_age[df_age['Age'] >= 65]
 
     total_riders = df_ride_month['FreeRidePassengers'].sum()
 
-    selected_age = st.slider("Set Age Threshold", min_value=MIN_AGE, max_value=MAX_AGE, value=65)
+    selected_age = st.slider("무임승차 기준 연령 설정", min_value=65, max_value=100, value=65)
 
     riders, loss, cum_loss = simulate_loss(selected_age, df_age, total_riders, model_2, model_3)
 
-    st.subheader("Prediction Result")
+    st.subheader("예측 결과")
     st.markdown(f"""
-    - Threshold Age: **{selected_age} years**
-    - Predicted Free Riders: **{riders:,.0f}**
-    - Estimated Loss: **{loss:,.2f} million KRW**
-    - Estimated Cumulative Loss: **{cum_loss:,.2f} million KRW**
+    - 기준 연령: **{selected_age}세 이상**
+    - 예상 무임승차 인원: **{riders:,.0f}명**
+    - 예상 손실액: **{loss:,.2f}백만원**
+    - 누적 손실 추정치: **{cum_loss:,.2f}백만원**
     """)
 
-    st.subheader("Policy Impact by Age")
-    age_range = range(MIN_AGE, MAX_AGE + 1)
-    riders_list, loss_list, cum_list = batch_simulate_loss(df_age, total_riders, model_2, model_3, MIN_AGE, MAX_AGE)
+    st.subheader("연령별 손실 변화")
+    age_range = range(65, 101)
+    riders_list, loss_list, cum_list = batch_simulate_loss(df_age, total_riders, model_2, model_3, 65, 100)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
     ax2 = ax1.twinx()
-    ax1.plot(age_range, riders_list, 'b-o', label='Free Riders')
-    ax2.plot(age_range, loss_list, 'r-s', label='Loss')
+    ax1.plot(age_range, riders_list, 'b-o', label='무임승차 인원')
+    ax2.plot(age_range, loss_list, 'r-s', label='손실액')
 
-    ax1.set_xlabel("Age Threshold")
-    ax1.set_ylabel("Free Riders", color='blue')
-    ax2.set_ylabel("Loss (million KRW)", color='red')
-
-    ax1.tick_params(axis='y', labelcolor='blue')
-    ax2.tick_params(axis='y', labelcolor='red')
-    ax1.set_title(f"Impact by Age Threshold ({selected_month})")
-
+    ax1.set_xlabel("기준 연령")
+    ax1.set_ylabel("무임승차 인원", color='blue')
+    ax2.set_ylabel("손실액 (백만원)", color='red')
+    ax1.set_title(f"연령에 따른 무임승차 인원 및 손실액 변화 ({selected_month})")
     fig.tight_layout()
     st.pyplot(fig)
 
-    # -----------------------------
-    # 정책 시사점 도출 예시
-    # -----------------------------
-    st.subheader("AI-based Policy Suggestion")
-
-    policy_insight = ""
+    st.subheader("정책적 시사점 (AI 분석)")
     if loss >= 10000:
-        policy_insight = (
-            "👉 Estimated loss is very high.\n"
-            "- Consider raising the age threshold to reduce fiscal burden.\n"
-            "- Also, evaluate low-income or vulnerable population exceptions."
-        )
+        st.markdown("""
+        🔴 **예상 손실이 매우 큽니다.**
+        - 무임승차 기준 연령을 상향 조정하는 방안을 고려해야 합니다.
+        - 재정 부담 완화를 위해 소득 기반의 대상자 선별도 검토할 수 있습니다.
+        """)
     elif loss < 3000:
-        policy_insight = (
-            "✅ Loss is relatively low.\n"
-            "- Current policy seems sustainable.\n"
-            "- Maintain or gradually expand benefit coverage."
-        )
+        st.markdown("""
+        🟢 **손실이 비교적 낮습니다.**
+        - 현재 정책이 재정적으로도 지속 가능할 수 있습니다.
+        - 또는 더 많은 계층에 혜택을 확대할 여지가 있습니다.
+        """)
     else:
-        policy_insight = (
-            "⚖️ Moderate loss observed.\n"
-            "- You may explore hybrid policies like time-limited free rides or regional restrictions."
-        )
-
-    st.markdown(policy_insight)
+        st.markdown("""
+        🟡 **손실이 중간 수준입니다.**
+        - 연령 조정 외에도 시간대 제한, 지역 제한 등의 하이브리드 정책 도입을 고려할 수 있습니다.
+        """)
 
 if __name__ == "__main__":
     main()
