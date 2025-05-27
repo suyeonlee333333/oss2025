@@ -41,7 +41,12 @@ def load_population_data():
     df_pop = df_pop[~df_pop['YearMonth'].astype(str).str.contains('합')]
     df_pop['YearMonth'] = pd.to_datetime(df_pop['YearMonth'], errors='coerce')
     df_pop = df_pop.dropna(subset=['YearMonth'])
+
+    # 🔍 디버깅용: 칼럼 이름 출력해보기
+    st.write("칼럼 이름 확인:", df_pop.columns.tolist())
+
     return df_pop
+
 
 
 def estimate_free_riders_by_virtual_policy(age, df, total_free_riders):
