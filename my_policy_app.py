@@ -21,7 +21,7 @@ def set_korean_font():
 # -----------------------------
 @st.cache_data
 def load_data_and_train_models():
-    df = pd.read_excel("re_study_data.xlsx", sheet_name="학습시킬 데이터")
+    df = pd.read_excel("무임인원 데이터 수정본.xlsx", sheet_name="학습시킬 데이터")
     df = df.rename(columns={
         '연령': 'Age',
         '무임인원': 'FreeRidePassengers',
